@@ -5,16 +5,57 @@ from app.models import User
 
 authPage = Blueprint('auth', __name__)
 
-@authPage.route("/register", methods=["GET", "POST"])
-def create_account():
+# @authPage.route("/register", methods=["GET", "POST"])
+# def create_account():
+#     if current_user.is_authenticated:
+#         return redirect(url_for("home"))
+    
+#     if request.method == 'POST':
+#         username = request.form['username'].strip()
+#         password = request.form['password']
+#         user_a
+
+
+
+@authPage.route("/login", methods=["GET", "POST"])
+def login():
     if current_user.is_authenticated:
         return redirect(url_for("home"))
     
+
     if request.method == 'POST':
         username = request.form['username'].strip()
-        password = request.form['password']
+        password=request.form['password']
+        user= User.query.filter_by(username=username).first()
+
+        if user and user.check_password(password):
+            login_user(user)
+            if user.is_admin:
+                return redirect(url_for('admin_dashboard'))
+            
+            return redirect(url_for('user_dashboard'))
+        
+
+        
+        
+        flash('Invalid email or password.', 'error')
+        return render_template('login.html')
+
 
     
+
+
+
+
+
+
+@authPage.route("/logout")
+@login_required
+def logout():
+    logout_user()
+
+    return render_template(logout.html)
+
 
 
 
