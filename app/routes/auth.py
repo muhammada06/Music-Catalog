@@ -40,6 +40,8 @@ def login():
         
         flash('Invalid email or password.', 'error')
         return render_template('login.html')
+    
+    return render_template('login.html')    
 
 
     
@@ -54,7 +56,7 @@ def login():
 def logout():
     logout_user()
 
-    return render_template(logout.html)
+    return redirect(url_for("homePage.home"))
 
 
 
