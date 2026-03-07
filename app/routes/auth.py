@@ -32,7 +32,7 @@ def login():
             if user.is_admin:
                 return redirect(url_for('admin.dashboard'))
             
-            return redirect(url_for('user_dashboard'))
+            return redirect(url_for('home.home'))
         
 
         

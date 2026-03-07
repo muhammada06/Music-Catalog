@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, abort
 from flask_login import login_required, current_user
-from app.models import Song
+from app.models import Song, User
 from app import db
 from datetime import datetime
 
@@ -10,9 +10,18 @@ def admin_required():
     if not current_user.is_authenticated or not current_user.is_admin:
         abort(403)
 
-@admin.route('/creation')
-def creation():
+@admin.route('/get')
+def get():
     return render_template('admin_account.html')
+
+@admin.route('/creation', methods=["GET", "POST"])
+def creation():
+    if request.method == 'POST':
+        new_user = User()
+        new_user.set_username(request.form['username'].strip())
+        new_user.set_password(request.form['password'])
+        new_user.set_is_admin()
+    return render_template('admin_dashboard.html')
 
 @admin.route('/dashboard')
 @login_required
