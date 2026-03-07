@@ -46,12 +46,6 @@ def add_song():
 
     return render_template('add_song.html')
 
-@admin.route('/delete')
-@login_required
-def delete_page():
-    admin_required()
-    songs = Song.query.filter_by(user_id=current_user.id).all()
-    return render_template('delete_song.html', songs=songs)
 
 @admin.route('/delete/<int:song_id>', methods=['POST'])
 @login_required
@@ -67,4 +61,30 @@ def delete_song(song_id):
     db.session.delete(song)
     db.session.commit()
 
-    return redirect(url_for('admin.delete_page'))
+    return redirect(url_for('admin.dashboard'))
+
+@admin.route('/edit/<int:song_id>', methods=['GET', 'POST'])
+@login_required
+def edit_song(song_id):
+    admin_required()
+
+    song = Song.query.get_or_404(song_id)
+
+    # Only allow editing your own songs
+    if song.user_id != current_user.id:
+        abort(403)
+
+    if request.method == 'POST':
+        song.title = request.form.get('title')
+        song.artist = request.form.get('artist')
+        song.album = request.form.get('album')
+        song.genre = request.form.get('genre')
+
+        release_date_str = request.form.get('release_date')
+        if release_date_str:
+            song.release_date = datetime.strptime(release_date_str, "%Y-%m-%d").date()
+
+        db.session.commit()
+        return redirect(url_for('admin.dashboard'))
+
+    return render_template('edit_song.html', song=song)

@@ -1,27 +1,30 @@
 <h1>Admin Dashboard</h1>
 
-<p>Welcome, Admin 👑</p>
+<p>Welcome, Admin </p>
 
 <a href="{{ url_for('admin.add_song') }}">
     <button>Add Songs</button>
 </a>
 
-<a href="{{ url_for('admin.delete_page') }}">
-    <button>Remove Songs</button>
-</a>
 
-<h2>Your Songs 🎵</h2>
+<h2>Your Songs </h2>
 
 {% if songs %}
-    <ul>
     {% for song in songs %}
-        <li>
-            <b>{{ song.title }}</b> 
-            {% if song.album %} ({{ song.album }}) {% endif %}
-            by {{ song.artist }}
-        </li>
+        <div style="margin-bottom:15px; padding:10px; border:1px solid #ccc; border-radius:8px;">
+            <b>{{ song.title }}</b> ({{song.album}}) — {{ song.artist }}
+
+            <div style="margin-top:8px; display:flex; gap:10px;">
+                <a href="{{ url_for('admin.edit_song', song_id=song.id) }}">
+                    <button>Edit</button>
+                </a>
+
+                <form method="POST" action="{{ url_for('admin.delete_song', song_id=song.id) }}" style="margin:0;">
+                    <button type="submit">Delete</button>
+                </form>
+            </div>
+        </div>
     {% endfor %}
-    </ul>
 {% else %}
     <p>You haven't added any songs yet.</p>
 {% endif %}
