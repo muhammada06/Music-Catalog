@@ -43,7 +43,7 @@
     <h1 style="text-align: center; color: black; font-size: 40px;">+Sign-in+</h1>
     <h2 style="text-align: center;">or</h2>
     <li style="list-style-type: none;">
-        <h2 style="text-align: center; white-space: pre;">Create an Admin account: <a href="admin_account.html">Create Admin account</a>      Create an user account: <a href="user_account.html">Create User account</a></h2>
+        <h2 style="text-align: center; white-space: pre;">Create an Admin account: <a href="{{ url_for('admin.creation') }}">Create Admin account</a>      Create an user account: <a href="{{ url_for('user.creation') }}">Create User account</a></h2>
     </li>
 
     <form method="POST" action="{{ url_for('auth.login') }}" style="text-align: center;">
