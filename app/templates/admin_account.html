@@ -1,8 +1,36 @@
 {% extends "base.html" %}
 
-{% block title %}Admin_account{% endblock %}
+{% block title %}Home{% endblock %}
 
 {% block content %}
+
+<style>
+    .large-input {
+        width: 300px;
+        height: 25px;
+        font-size: 30px;
+        padding: 5px;
+    }
+
+    .large-label {
+        font-size: 30px;
+        display: inline-block;
+        width: 300px;
+        text-align: center;
+        margin-right: 5px;
+    }
+
+    .big-button {
+        width: 200px;
+        height: 50px;
+        font-size: 15px;
+        background-color: green;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+</style>
 
 <div style="
             width: 100%;
@@ -26,33 +54,6 @@
             ">
         <h1 style="text-align: center; color: green; font-size: 40px;">+Admin Account Creation+</h1>
         <p style="text-align: center;">Hey, Lets start creating you account!</p>
-        <style>
-            .large-input {
-              width: 300px;
-              height: 25px;
-              font-size: 30px;
-              padding: 5px;
-            }
-
-            .large-label {
-              font-size: 30px;
-              display: inline-block;
-              width: 300px;
-              text-align: center;
-              margin-right: 5px;
-            }
-
-            .big-button {
-                width: 200px;
-                height: 50px;
-                font-size: 15px;
-                background-color: green;
-                color: white;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-            }
-        </style>
 
         <form style="text-align: center;">
             <label for="first_name" class="large-label">First Name:</label>
@@ -73,15 +74,18 @@
             <input type="submit" value="Sign Up" class="big-button">
         </form>
 
-        <p style="text-align: center;">Hey, If you have an account sign-in here!</p>
-        <li style="list-style-type: none;"><a href="login.html">Login</a></li>
+        <footer>
+            <li style="list-style-type: none;">
+                <p style="text-align: left;">Hey, If you have an account sign-in here: <a href="login.html">Login</a></p>
+            </li>
+            <li style="list-style-type: none;">
+                <p style="text-align: left;">Hey, If you wish to create an user account instead, do so here: <a href="user_account.html">Create User account</a></p>
+            </li>
 
+            <p>&copy; 2026 Group Project. All rights reserved.</p>
+        </footer>
     </div>
 </div>
-
-<footer>
-    <p>&copy; 2026 Group Project. All rights reserved.</p>
-</footer>
 
 <script src="app.js"></script>
 
