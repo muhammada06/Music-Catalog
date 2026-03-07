@@ -10,6 +10,10 @@ def admin_required():
     if not current_user.is_authenticated or not current_user.is_admin:
         abort(403)
 
+@admin.route('/creation')
+def creation():
+    return render_template('admin_account.html')
+
 @admin.route('/dashboard')
 @login_required
 def dashboard():

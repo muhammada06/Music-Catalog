@@ -15,9 +15,11 @@ def create_app():
     from app.routes.home import homePage
     from app.routes.auth import authPage
     from app.routes.admin import admin
+    from app.routes.user import user
     app.register_blueprint(homePage)
     app.register_blueprint(authPage)
     app.register_blueprint(admin)
+    app.register_blueprint(user)
 
     with app.app_context():
         db.create_all()

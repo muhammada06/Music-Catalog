@@ -6,7 +6,7 @@
   <h1>Home</h1>
   <p>Welcome.</p>
   <p>If you are a label or artist, please create your account through here:</p>
-  <a href="admin_account.html">Create Admin account</a>
+  <a href="{{ url_for('admin.creation') }}">Create Admin account</a>
   <p>If you are a music lover or a normal user, please create your account through here:</p>
-  <a href="user_account.html">Create User account</a>
+  <a href="{{ url_for('user.creation') }}">Create User account</a>
 {% endblock %}
