@@ -1,25 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-    <title>Admin Account Creation</title>
-</head>
 {% extends "base.html" %}
 
 {% block title %}Home{% endblock %}
 
 {% block content %}
 
-<body style="text-align: center; margin: 0; padding: 0;">
 <div style="
             width: 100%;
-            height: 250px;
+            height: 80px;
             background: green;
             margin: auto;
         ">
-    <p style="text-align: left;"><img src="watermelionIncLogo.png" alt="Flowers in Chania" width="51.2" height="51.2">Watermelon Inc</p>
+    <p style="text-align: left;">
+        <img src="{{ url_for('static', filename='watermelionIncLogo.png') }}" 
+        alt="Flowers in Chania" 
+        width="51.2" 
+        height="51.2">
+         
+        Watermelon Inc
+    </p>
 
     <div style="
                 width: 800px;
@@ -59,11 +57,11 @@
         </style>
 
         <form style="text-align: center;">
-            <label for="first name" class="large-label">First Name:</label>
-            <input type="text" id="first name" name="first name" class="large-input"><br><br>
+            <label for="first_name" class="large-label">First Name:</label>
+            <input type="text" id="first_name" name="first_name" class="large-input"><br><br>
 
-            <label for="last name" class="large-label">Last Name:</label>
-            <input type="text" id="last name" name="last name" class="large-input"><br><br>
+            <label for="last_name" class="large-label">Last Name:</label>
+            <input type="text" id="last_name" name="last_name" class="large-input"><br><br>
 
             <label for="username" class="large-label">Username:</label>
             <input type="text" id="username" name="username" class="large-input"><br><br>
@@ -80,5 +78,3 @@
     </div>
 </div>
 {% endblock %}
-</body>
-</html>

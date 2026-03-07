@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<style>
+    .large-input {
+      width: 300px;
+      height: 25px;
+      font-size: 30px;
+      padding: 5px;
+    }
+
+    .large-label {
+      font-size: 30px;
+      display: inline-block;
+      width: 300px;
+      text-align: center;
+      margin-right: 5px;
+    }
+
+    .big-button {
+        width: 200px;
+        height: 50px;
+        font-size: 15px;
+        background-color: blue;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+</style>
+
+<div style="text-align:left;">
+    <img src="{{ url_for('static', filename='watermelionIncLogo.png') }}"
+         alt="Watermelon Inc Logo"
+         width="51"
+         height="51">
+
+    Watermelon Inc
+</div>
+
+<div style="
+    width: 800px;
+    height: 750px;
+    background: lightblue;
+    margin: auto;
+    text-align: center;
+    ">
+
+    <h1 style="text-align: center; color: blue; font-size: 40px;">+User Account Creation+</h1>
+    <p style="text-align: center;">Hey, Lets start creating you account!</p>
+
+    <form style="text-align: center;">
+        <label for="first_name" class="large-label">First Name:</label>
+        <input type="text" id="first_name" name="first_name" class="large-input"><br><br>
+
+        <label for="last_name" class="large-label">Last Name:</label>
+        <input type="text" id="last_name" name="last_name" class="large-input"><br><br>
+
+        <label for="username" class="large-label">Username:</label>
+        <input type="text" id="username" name="username" class="large-input"><br><br>
+
+        <label for="password" class="large-label">Password:</label>
+        <input type="password" id="password" name="password" class="large-input"><br><br>
+
+        <label for="email" class="large-label">Email:</label>
+        <input type="email" id="email" name="email" class="large-input"><br><br>
+
+        <input type="submit" value="Sign Up" class="big-button">
+    </form>
+
+</div>
+{% endblock %}
