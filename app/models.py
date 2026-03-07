@@ -15,6 +15,15 @@ class User(UserMixin, db.Model):
     def check_password(self, plain_user_password):
         return check_password_hash(self.password, plain_user_password)
     
+class Song(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    artist = db.Column(db.String(200), nullable=False)
+    album = db.Column(db.String(200))
+    genre = db.Column(db.String(100))
+    release_date = db.Column(db.Date)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))

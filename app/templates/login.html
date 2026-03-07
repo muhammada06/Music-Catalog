@@ -46,7 +46,7 @@
         <h2 style="text-align: center; white-space: pre;">Create an Admin account: <a href="admin_account.html">Create Admin account</a>      Create an user account: <a href="user_account.html">Create User account</a></h2>
     </li>
 
-    <form style="text-align: center;">
+    <form method="POST" action="{{ url_for('auth.login') }}" style="text-align: center;">
 
         <label for="username" class="large-label">Username:</label>
         <input type="text" id="username" name="username" class="large-input"><br><br>

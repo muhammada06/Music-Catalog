@@ -20,9 +20,8 @@ authPage = Blueprint('auth', __name__)
 @authPage.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for("home"))
+        return redirect(url_for("home.home"))
     
-
     if request.method == 'POST':
         username = request.form['username'].strip()
         password=request.form['password']
@@ -31,7 +30,7 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             if user.is_admin:
-                return redirect(url_for('admin_dashboard'))
+                return redirect(url_for('admin.dashboard'))
             
             return redirect(url_for('user_dashboard'))
         
