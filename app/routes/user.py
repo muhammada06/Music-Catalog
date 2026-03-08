@@ -17,4 +17,6 @@ def creation():
         new_user = User()
         new_user.set_username(request.form['username'].strip())
         new_user.set_password(request.form['password'])
+        db.session.add(new_user)
+        db.session.commit()
     return render_template('home.home')

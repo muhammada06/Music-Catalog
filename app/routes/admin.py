@@ -21,6 +21,8 @@ def creation():
         new_user.set_username(request.form['username'].strip())
         new_user.set_password(request.form['password'])
         new_user.set_is_admin()
+        db.session.add(new_user)
+        db.session.commit()
     return render_template('admin_dashboard.html')
 
 @admin.route('/dashboard')

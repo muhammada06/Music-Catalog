@@ -10,10 +10,10 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
 
     def set_username(self, plain_user_password):
-        self.password = generate_password_hash(plain_user_password)
+        self.username = plain_user_password
 
     def set_password(self, plain_user_password):
-        self.username = generate_password_hash(plain_user_password)
+        self.password = generate_password_hash(plain_user_password)
 
     def set_is_admin(self):
         self.is_admin = True
