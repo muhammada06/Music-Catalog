@@ -10,15 +10,25 @@
       <a href="/">Home</a>
       <span style="margin-left:12px;"></span>
 
-      <!-- Logout button -->
-      <form action="/logout" method="get" style="display:inline;">
+      {% if current_user.is_authenticated %}
+      <!-- Logout button visible only when logged in -->
+      <form action="{{ url_for('auth.logout') }}" method="get" style="display:inline;">
         <button type="submit">Logout</button>
       </form>
+      {% else %}
+      <!-- show login link when not authenticated -->
+      <a href="{{ url_for('auth.login') }}">Login</a>
+      {% endif %}
       <!-- (If backend uses POST for logout, change method to post) -->
     </nav>
   </header>
 
   <main style="padding:12px;">
+    {# show any flash messages using alerts #}
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+      <script>alert("{{ message }}");</script>
+    {% endfor %}
+
     {% block content %}{% endblock %}
   </main>
 </body>

@@ -53,9 +53,10 @@ def login():
 @authPage.route("/logout")
 @login_required
 def logout():
+    # log the user out, flash a notice and back home
     logout_user()
-
-    return render_template('login.html')
+    flash('You have logged out.', 'info')
+    return redirect(url_for('home.home'))
 
 
 
