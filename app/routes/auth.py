@@ -55,7 +55,7 @@ def login():
 def logout():
     logout_user()
 
-    return redirect(url_for("homePage.home"))
+    return render_template('login.html')
 
 
 

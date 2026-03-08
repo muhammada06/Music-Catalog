@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, abort
+from flask import Blueprint, render_template, request, redirect, url_for, abort, flash
 from flask_login import login_required, current_user
 from app.models import User
 from app import db
@@ -15,6 +15,13 @@ def get():
 def creation():
     if request.method == 'POST':
         new_user = User()
+
+        username = request.form['username'].strip()
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash("Username already exists")
+            return redirect(url_for("auth.login"))
+        
         new_user.set_username(request.form['username'].strip())
         new_user.set_password(request.form['password'])
         db.session.add(new_user)

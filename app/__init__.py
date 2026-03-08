@@ -12,6 +12,11 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
 
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models import User
+        return db.session.get(User, int(user_id))
+
     from app.routes.home import homePage
     from app.routes.auth import authPage
     from app.routes.admin import admin
