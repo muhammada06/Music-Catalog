@@ -34,5 +34,6 @@ def creation():
 @user.route('/dashboard')
 @login_required
 def dashboard():
-    songs = Song.query.filter_by(user_id=current_user.id).all()
+    # Show all songs in the database for user-side view (read-only)
+    songs = Song.query.all()
     return render_template("user_dashboard.html", songs=songs)

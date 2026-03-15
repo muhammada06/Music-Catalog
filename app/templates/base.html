@@ -3,9 +3,43 @@
 <head>
   <meta charset="utf-8">
   <title>{% block title %}Music Catalog{% endblock %}</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0d1222;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    header {
+      background: #777;
+      padding: 12px;
+      border-bottom: 1px solid #444;
+    }
+
+    nav a, nav button {
+      color: white;
+      text-decoration: none;
+      margin-right: 12px;
+    }
+
+    nav button {
+      background: #333;
+      border: 1px solid #999;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: white;
+    }
+
+    main {
+      padding: 12px;
+      background: transparent;
+    }
+  </style>
 </head>
 <body>
-  <header style="padding:12px; border-bottom:1px solid #ccc;">
+  <header>
     <nav>
       <a href="/">Home</a>
       <span style="margin-left:12px;"></span>

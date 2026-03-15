@@ -80,7 +80,7 @@
     {% if current_user.is_admin %}
       <a class="button adminButton" href="{{ url_for('admin.dashboard') }}">Go to Admin Dashboard</a>
     {% else %}
-      <a class="button userButton" href="{{ url_for('home.home') }}">Go to User Home</a>
+      <a class="button userButton" href="{{ url_for('user.dashboard') }}">Go to User Dashboard</a>
     {% endif %}
     <a class="button loginButton" href="{{ url_for('auth.logout') }}">Logout</a>
   {% else %}

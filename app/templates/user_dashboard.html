@@ -3,17 +3,117 @@
 {% block title %}User Dashboard{% endblock %}
 
 {% block content %}
-<h1>User Dashboard</h1>
-<p>Welcome back, {{ current_user.username }}!</p>
+<style>
+  header {
+    background: #777; /* gray navbar */
+  }
 
-<h2>Your Songs</h2>
-{% if songs %}
-    {% for song in songs %}
-        <div style="margin-bottom:15px; padding:10px; border:1px solid #ccc; border-radius:8px;">
-            <b>{{ song.title }}</b> ({{ song.album }}) — {{ song.artist }}
-        </div>
-    {% endfor %}
-{% else %}
-    <p>You haven't added any songs yet.</p>
-{% endif %}
+  .dashboard-page {
+    background: linear-gradient(135deg, #1e1e2f, #121212);
+    color: white;
+    min-height: calc(100vh - 72px);
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
+  .dashboard-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 22px;
+    border-radius: 12px;
+    background: none;
+    box-shadow: none;
+  }
+
+  .dashboard-title {
+    font-size: 2.6rem;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .dashboard-subtitle {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #b8c1d7;
+  }
+
+  .album-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .song-card {
+    border: none;
+    padding: 14px;
+    border-radius: 10px;
+    background: rgba(20, 30, 50, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .song-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .song-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+  }
+
+  .song-meta {
+    color: #d3d9ee;
+    font-size: 0.95rem;
+  }
+
+  .button, .control-button {
+    border-radius: 7px;
+    padding: 10px 18px;
+    text-decoration: none;
+    font-weight: bold;
+    color: white;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .control-button {
+    background: #0090ff;
+    transition: 0.2s;
+  }
+
+  .control-button:hover {
+    background: #2aa4ff;
+  }
+
+</style>
+
+<div class="dashboard-page">
+  <div class="dashboard-container">
+    <h1 class="dashboard-title">Music Catalog Dashboard</h1>
+    <p class="dashboard-subtitle">Hello {{ current_user.username }}, here are your available songs.</p>
+
+    <div style="display:flex; gap:10px; justify-content:center; margin-bottom:18px;">
+      <a class="button loginButton" href="{{ url_for('auth.logout') }}">Logout</a>
+    </div>
+
+    <div class="album-list">
+      {% if songs %}
+        {% for song in songs %}
+          <div class="song-card">
+            <div class="song-info">
+              <div class="song-title">{{ song.title }}</div>
+              <div class="song-meta">{{ song.artist }} | {{ song.album or 'Unknown album' }} | {{ song.genre or 'No genre' }}</div>
+            </div>
+            <a class="control-button" href="#">Play</a>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div style="text-align:center; color:#d8e2f5; padding:20px; border-radius:8px; border:1px dashed rgba(255,255,255,0.25);">No songs available yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
 {% endblock %}
