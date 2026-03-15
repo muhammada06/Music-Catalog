@@ -26,9 +26,10 @@ def creation():
         new_user.set_password(request.form['password'])
         db.session.add(new_user)
         db.session.commit()
-    return render_template('auth.login')
+        flash("User created successfully. Please log in.", "success")
+        return redirect(url_for('auth.login'))
 
-user = Blueprint('user', __name__)
+    return render_template('login.html')
 
 @user.route('/dashboard')
 def dashboard():

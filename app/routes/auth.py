@@ -36,7 +36,7 @@ def login():
 def logout():
     # log the user out, flash a notice and back home
     logout_user()
-    flash('You have logged out.', 'info')
+    flash('You have logged out.', 'logout')
     return redirect(url_for('home.home'))
 
 
