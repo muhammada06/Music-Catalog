@@ -23,7 +23,7 @@ def login():
             if user.is_admin:
                 return redirect(url_for('admin.dashboard'))
             
-            return redirect(url_for('home.home'))
+            return redirect(url_for('user.dashboard'))
         
         flash('Invalid email or password.', 'error')
         return render_template('login.html')

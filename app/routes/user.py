@@ -27,3 +27,9 @@ def creation():
         db.session.add(new_user)
         db.session.commit()
     return render_template('auth.login')
+
+user = Blueprint('user', __name__)
+
+@user.route('/dashboard')
+def dashboard():
+    return render_template("user_dashboard.html")
