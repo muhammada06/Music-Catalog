@@ -4,16 +4,7 @@ from app import db
 from app.models import User
 
 authPage = Blueprint('auth', __name__)
-
-# @authPage.route("/register", methods=["GET", "POST"])
-# def create_account():
-#     if current_user.is_authenticated:
-#         return redirect(url_for("home"))
-    
-#     if request.method == 'POST':
-#         username = request.form['username'].strip()
-#         password = request.form['password']
-#         user_a
+     
 
 
 
@@ -34,20 +25,10 @@ def login():
             
             return redirect(url_for('home.home'))
         
-
-        
-        
         flash('Invalid email or password.', 'error')
         return render_template('login.html')
     
     return render_template('login.html')    
-
-
-    
-
-
-
-
 
 
 @authPage.route("/logout")
