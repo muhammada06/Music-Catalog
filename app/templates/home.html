@@ -61,12 +61,14 @@
 
 </style>
 
+<!-- flash messages (home only) -->
+{% for category, message in get_flashed_messages(with_categories=true) %}
+  <div style="margin:10px auto; width:80%; padding:10px; background:#f0f0f0; border:1px solid #ccc; color:#000; text-align:center; border-radius:5px;">{{ message }}</div>
+{% endfor %}
+
 <!-- Images for background-->
 <img src="/static/backgroundImageLeft.png" class="picture leftPicture">
 <img src="/static/backgroundImageRight(2).png" class="picture rightPicture">
-
-
-</style>
 
 
 <div class="homeContainer">
