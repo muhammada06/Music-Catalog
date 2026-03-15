@@ -1,12 +1,94 @@
-{% extends "base.html" %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Music Catalog</title>
+</head>
 
-{% block title %}Home{% endblock %}
+<body>
 
-{% block content %}
-  <h1>Home</h1>
-  <p>Welcome.</p>
+<style>
+  body{
+    background: linear-gradient(135deg, #1e1e2f, #121212);
+    color: white;
+    font-family: Arial, sans-serif;
+  }
+
+  .homeContainer{
+    text-align: center;
+    margin-top: 100px;
+  }
+
+  /*Creating buttons*/
+  .button{
+    display: inline-block;
+    margin-top: 10px;
+    padding: 12px 24px; 
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+  }
+
+  .adminButton{
+    background-color: red;
+    color: white;
+  }
+
+  .userButton {
+    background-color: green;
+    color: white;
+  }
+
+  .loginButton{
+    background-color: #3498db;
+    color: white;
+  }
+
+  .picture{
+    position: fixed;
+    bottom: 0;
+    height: 80vh;
+  }
+
+  /*Adding pictures*/
+  .leftPicture{
+    left: -100px;
+  }
+
+  .rightPicture{
+    right: 50px;
+  }
+
+</style>
+
+<!-- Images for background-->
+<img src="/static/backgroundImageLeft.png" class="picture leftPicture">
+<img src="/static/backgroundImageRight(2).png" class="picture rightPicture">
+
+
+</style>
+
+
+<div class="homeContainer">
+
+  <h1>Music Catalog</h1>
+
+
   <p>If you are a label or artist, please create your account through here:</p>
-  <a href="{{ url_for('admin.get') }}">Create Admin account</a>
-  <p>If you are a music lover or a normal user, please create your account through here:</p>
-  <a href="{{ url_for('user.get') }}">Create User account</a>
-{% endblock %}
+
+  <!--change link to byttons-->
+  <a class="button adminButton" href="{{ url_for('admin.get') }}">Create Admin Account</a>
+
+  <p style="margin-top:40px;">If you are someone who loves music or just wants to listen to it, please create your account through here:</p>
+
+  <!--change link to button-->
+  <a class="button userButton" href="{{ url_for('user.get') }}">Create User Account</a>
+
+  <p style="margin-top:40px;">Already have an account?</p>
+
+  <!--Add login button-->
+  <a class="button loginButton" href="{{ url_for('auth.login') }}">Login</a>
+
+</div>
+</body>
+</html>
