@@ -1,9 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Hello Page</title>
-</head>
-<body>
-    <h1>Hello User</h1>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}User Dashboard{% endblock %}
+
+{% block content %}
+<h1>User Dashboard</h1>
+<p>Welcome back, {{ current_user.username }}!</p>
+
+<h2>Your Songs</h2>
+{% if songs %}
+    {% for song in songs %}
+        <div style="margin-bottom:15px; padding:10px; border:1px solid #ccc; border-radius:8px;">
+            <b>{{ song.title }}</b> ({{ song.album }}) — {{ song.artist }}
+        </div>
+    {% endfor %}
+{% else %}
+    <p>You haven't added any songs yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, abort, flash
 from flask_login import login_required, current_user
-from app.models import User
+from app.models import User, Song
 from app import db
 from datetime import datetime
 
@@ -32,5 +32,7 @@ def creation():
     return render_template('login.html')
 
 @user.route('/dashboard')
+@login_required
 def dashboard():
-    return render_template("user_dashboard.html")
+    songs = Song.query.filter_by(user_id=current_user.id).all()
+    return render_template("user_dashboard.html", songs=songs)
