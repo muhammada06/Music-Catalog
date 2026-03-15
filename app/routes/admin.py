@@ -1,8 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, abort, flash
+from flask import Blueprint, render_template, request, redirect, url_for, abort, flash,current_app
 from flask_login import login_required, current_user
 from app.models import Song, User
 from app import db
 from datetime import datetime
+import subprocess
+import os
+from werkzeug.utils import secure_filename
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -50,6 +53,21 @@ def add_song():
         
         if release_date_str:
             release_date = datetime.strptime(release_date_str, "%Y-%m-%d").date()
+        
+        audio_file = request.files.get("audio")
+        audio_path = None
+
+        if audio_file and audio_file.filename != "":
+
+            filename = secure_filename(audio_file.filename)
+
+            original_path = os.path.join(current_app.config["UPLOAD_FOLDER"], "temp_" + filename)
+            trimmed_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+            audio_file.save(original_path)
+
+            subprocess.run(["ffmpeg","-i", original_path, "-t", "10","-c", "copy",trimmed_path ])
+            os.remove(original_path)
+            audio_path = trimmed_path
 
         song = Song(
             title=request.form.get('title'),
@@ -57,7 +75,8 @@ def add_song():
             album=request.form.get('album'),
             genre=request.form.get('genre'),
             release_date=release_date,
-            user_id=current_user.id
+            user_id=current_user.id,
+            audio_file=audio_path
 
         )
 
