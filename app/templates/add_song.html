@@ -1,20 +1,50 @@
-<h1>Add Song</h1>
+{% extends "base.html" %}
 
-<form method="POST">
-  <label>Title:</label><br>
-  <input type="text" name="title" required><br><br>
+{% block title %}Add Song{% endblock %}
 
-  <label>Artist:</label><br>
-  <input type="text" name="artist" required><br><br>
+{% block content %}
+<h1>Add a New Song</h1>
 
-  <label>Album:</label><br>
-  <input type="text" name="album"><br><br>
+<form method="POST" enctype="multipart/form-data">
+  <!-- Song title -->
+  <div>
+    <label for="title">Title:</label>
+    <input type="text" name="title" id="title" required>
+  </div>
 
-  <label>Genre:</label><br>
-  <input type="text" name="genre"><br><br>
+  <!-- Artist -->
+  <div>
+    <label for="artist">Artist:</label>
+    <input type="text" name="artist" id="artist" required>
+  </div>
 
-  <label>Release Date:</label><br>
-  <input type="date" name="release_date"><br><br>
+  <!-- Album -->
+  <div>
+    <label for="album">Album:</label>
+    <input type="text" name="album" id="album">
+  </div>
 
-  <button type="submit">Add Song</button>
+  <!-- Genre -->
+  <div>
+    <label for="genre">Genre:</label>
+    <input type="text" name="genre" id="genre">
+  </div>
+
+  <!-- Release Date -->
+  <div>
+    <label for="release_date">Release Date:</label>
+    <input type="date" name="release_date" id="release_date">
+  </div>
+
+  <!-- Audio file upload -->
+  <div>
+    <label for="audio">Upload Audio (MP3, WAV, etc.):</label>
+    <input type="file" name="audio" id="audio" accept="audio/*">
+  </div>
+
+  <!-- Submit button -->
+  <div>
+    <button type="submit">Add Song</button>
+  </div>
 </form>
+{% endblock %}
