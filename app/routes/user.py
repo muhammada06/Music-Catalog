@@ -26,4 +26,4 @@ def creation():
         new_user.set_password(request.form['password'])
         db.session.add(new_user)
         db.session.commit()
-    return render_template('auth.login')
+    return render_template(url_for('auth.login'))
