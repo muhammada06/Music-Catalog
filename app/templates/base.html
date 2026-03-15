@@ -24,10 +24,12 @@
   </header>
 
   <main style="padding:12px;">
-    {# show any flash messages using alerts #}
-    {% for category, message in get_flashed_messages(with_categories=true) %}
-      <script>alert("{{ message }}");</script>
-    {% endfor %}
+    {# show flash messages except on the login page #}
+    {% if request.endpoint != 'auth.login' %}
+      {% for category, message in get_flashed_messages(with_categories=true) %}
+        <script>alert("{{ message }}");</script>
+      {% endfor %}
+    {% endif %}
 
     {% block content %}{% endblock %}
   </main>
