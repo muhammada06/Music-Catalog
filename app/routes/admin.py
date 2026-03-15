@@ -30,7 +30,7 @@ def creation():
         new_user.set_is_admin()
         db.session.add(new_user) 
         db.session.commit()
-    return render_template('admin_dashboard.html')
+    return redirect(url_for("auth.login"))
 
 @admin.route('/dashboard')
 @login_required
