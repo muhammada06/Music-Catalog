@@ -37,3 +37,8 @@ def dashboard():
     # Show all songs in the database for user-side view (read-only)
     songs = Song.query.all()
     return render_template("user_dashboard.html", songs=songs)
+
+@user.route('/play/<int:song_id>', methods=['GET', 'POST'])
+@login_required
+def play(song_id):
+    return Song.query.get(song_id)

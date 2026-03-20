@@ -106,7 +106,13 @@
               <div class="song-title">{{ song.title }}</div>
               <div class="song-meta">{{ song.artist }} | {{ song.album or 'Unknown album' }} | {{ song.genre or 'No genre' }}</div>
             </div>
-            <a class="control-button" href="#">Play</a>
+            {% if song.audio_file %}
+              <audio controls>
+                <source src="instance/demo_song/mfcc-demo-music-upbeat-exciting-vlog-background-intro-theme-328256.mp3" type="audio/mpeg">
+              </audio>
+            {% else %}
+              <a class="control-button" href="#">Play</a>
+            {% endif %}
           </div>
         {% endfor %}
       {% else %}

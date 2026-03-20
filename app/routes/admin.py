@@ -3,6 +3,8 @@ from flask_login import login_required, current_user
 from app.models import Song, User
 from app import db
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import os
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -51,12 +53,22 @@ def add_song():
         if release_date_str:
             release_date = datetime.strptime(release_date_str, "%Y-%m-%d").date()
 
+        file = request.files.get('audio')
+
+        file = request.files.get('audio')
+        if file:
+            filename = secure_filename(file.filename)
+            filepath = os.path.join("instance/demo_song", filename)
+            file.save(filepath)
+
         song = Song(
+
             title=request.form.get('title'),
             artist=request.form.get('artist'),
             album=request.form.get('album'),
             genre=request.form.get('genre'),
             release_date=release_date,
+            audio_file=filepath,
             user_id=current_user.id
 
         )
