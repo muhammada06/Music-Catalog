@@ -126,3 +126,13 @@ def edit_song(song_id):
         return redirect(url_for('admin.dashboard'))
 
     return render_template('edit_song.html', song=song)
+
+@admin.route('/remove_demo/<int:song_id>', methods=['POST'])
+@login_required
+def removeDemo(song_id):
+    admin_required()
+    song = Song.query.get_or_404(song_id)
+    song.audio_file = None
+    db.session.commit()
+
+    return redirect(url_for('admin.edit_song', song_id=song.id))

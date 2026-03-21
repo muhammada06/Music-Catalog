@@ -42,6 +42,7 @@ def dashboard():
 
 
 @user.route('/play/<int:song_id>')
+@login_required
 def play(song_id):
     song = Song.query.get_or_404(song_id)
     folder_path = os.path.abspath(os.path.join('instance', 'demo_song'))
