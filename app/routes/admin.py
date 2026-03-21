@@ -53,13 +53,11 @@ def add_song():
         if release_date_str:
             release_date = datetime.strptime(release_date_str, "%Y-%m-%d").date()
 
-        file = request.files.get('audio')
-
+        filename = None
         file = request.files.get('audio')
         if file:
             filename = secure_filename(file.filename)
-            filepath = os.path.join("instance/demo_song", filename)
-            file.save(filepath)
+            file.save(os.path.join("instance/demo_song", filename))
 
         song = Song(
 
@@ -68,7 +66,7 @@ def add_song():
             album=request.form.get('album'),
             genre=request.form.get('genre'),
             release_date=release_date,
-            audio_file=filepath,
+            audio_file=filename,
             user_id=current_user.id
 
         )
@@ -89,8 +87,8 @@ def delete_song(song_id):
     song = Song.query.get_or_404(song_id)
 
     # Only allow deleting your own songs
-    if song.user_id != current_user.id:
-        abort(403)
+    #if song.user_id != current_user.id:
+        #abort(403)
 
     db.session.delete(song)
     db.session.commit()
@@ -105,14 +103,20 @@ def edit_song(song_id):
     song = Song.query.get_or_404(song_id)
 
     # Only allow editing your own songs
-    if song.user_id != current_user.id:
-        abort(403)
+    #if song.user_id != current_user.id:
+        #abort(403)
 
     if request.method == 'POST':
         song.title = request.form.get('title')
         song.artist = request.form.get('artist')
         song.album = request.form.get('album')
         song.genre = request.form.get('genre')
+        
+        file = request.files.get('audio')
+        if file:
+            filename = secure_filename(file.filename)
+            file.save(os.path.join("instance/demo_song", filename))
+            song.audio_file = filename
 
         release_date_str = request.form.get('release_date')
         if release_date_str:

@@ -104,11 +104,11 @@
           <div class="song-card">
             <div class="song-info">
               <div class="song-title">{{ song.title }}</div>
-              <div class="song-meta">{{ song.artist }} | {{ song.album or 'Unknown album' }} | {{ song.genre or 'No genre' }}</div>
+              <div class="song-meta">{{ song.artist }} | {{ song.album or 'Unknown album' }} | {{ song.genre or 'No genre' }} | {{ url_for('user.play', song_id=song.id) }}</div>
             </div>
             {% if song.audio_file %}
               <audio controls>
-                <source src="instance/demo_song/mfcc-demo-music-upbeat-exciting-vlog-background-intro-theme-328256.mp3" type="audio/mpeg">
+                <source src="{{ url_for('user.play', song_id=song.id) }}" type="audio/mpeg">
               </audio>
             {% else %}
               <a class="control-button" href="#">Play</a>

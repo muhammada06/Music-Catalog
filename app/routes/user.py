@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, abort, flash
+import os
+
+from flask import Blueprint, current_app, render_template, request, redirect, send_file, send_from_directory, url_for, abort, flash
 from flask_login import login_required, current_user
 from app.models import User, Song
 from app import db
@@ -38,7 +40,10 @@ def dashboard():
     songs = Song.query.all()
     return render_template("user_dashboard.html", songs=songs)
 
-@user.route('/play/<int:song_id>', methods=['GET', 'POST'])
-@login_required
+
+@user.route('/play/<int:song_id>')
 def play(song_id):
-    return Song.query.get(song_id)
+    song = Song.query.get_or_404(song_id)
+    folder_path = os.path.abspath(os.path.join('instance', 'demo_song'))
+
+    return send_from_directory(folder_path, song.audio_file)
