@@ -40,7 +40,7 @@ def creation():
 @login_required
 def dashboard():
     admin_required()
-    songs = Song.query.filter_by(user_id=current_user.id).all()
+    songs = Song.query.all()
     return render_template('admin_dashboard.html', songs=songs)
 
 @admin.route('/add', methods=['GET', 'POST'])
