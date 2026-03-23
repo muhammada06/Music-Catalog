@@ -3,54 +3,137 @@
 {% block title %}Add Song{% endblock %}
 
 {% block content %}
-<h1>Add a New Song</h1>
+<style>
+  .page {
+    min-height: calc(100vh - 62px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 16px;
+    background: #0d1117;
+  }
 
-<form method="POST" enctype="multipart/form-data">
-  <!-- Song title -->
-  <div>
-    <label for="title">Title:</label>
-    <input type="text" name="title" id="title" required>
-  </div>
+  .card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 36px 40px;
+    width: 100%;
+    max-width: 480px;
+  }
 
-  <!-- Artist -->
-  <div>
-    <label for="artist">Artist:</label>
-    <input type="text" name="artist" id="artist" required>
-  </div>
+  .card h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #e6edf3;
+    margin-bottom: 24px;
+  }
 
-  <!-- Album -->
-  <div>
-    <label for="album">Album:</label>
-    <input type="text" name="album" id="album">
-  </div>
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
 
-  <!-- Genre -->
-  <div>
-    <label for="genre">Genre:</label>
-    <input type="text" name="genre" id="genre">
-  </div>
+  .form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #c9d1d9;
+  }
 
-  <!-- Release Date -->
-  <div>
-    <label for="release_date">Release Date:</label>
-    <input type="date" name="release_date" id="release_date">
-  </div>
+  .form-group input[type="text"],
+  .form-group input[type="date"] {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    color: #e6edf3;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
 
-  <!-- Audio file upload -->
-  <div>
-    <label for="audio">Upload Audio (MP3, WAV, etc.):</label>
-    <input type="file" name="audio" id="audio" accept="audio/*">
-  </div>
+  .form-group input:focus { border-color: #58a6ff; }
 
-  <!-- Album cover upload -->
-  <div>
-    <label for="album_cover">Album Cover (JPG, PNG, etc.):</label>
-    <input type="file" name="album_cover" id="album_cover" accept="image/*">
-  </div>
+  .form-group input[type="file"] {
+    font-size: 0.85rem;
+    color: #8b949e;
+  }
 
-  <!-- Submit button -->
-  <div>
-    <button type="submit">Add Song</button>
+  .submit-btn {
+    width: 100%;
+    padding: 11px;
+    background: #238636;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.15s;
+  }
+
+  .submit-btn:hover { background: #2ea043; }
+
+  .back-link {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.85rem;
+    color: #58a6ff;
+    text-decoration: none;
+  }
+
+  .back-link:hover { text-decoration: underline; }
+</style>
+
+<div class="page">
+  <div class="card">
+    <h1>Add a New Song</h1>
+
+    <form method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="title">Title *</label>
+        <input type="text" name="title" id="title" required placeholder="Song title">
+      </div>
+
+      <div class="form-group">
+        <label for="artist">Artist *</label>
+        <input type="text" name="artist" id="artist" required placeholder="Artist name">
+      </div>
+
+      <div class="form-group">
+        <label for="album">Album</label>
+        <input type="text" name="album" id="album" placeholder="Album name">
+      </div>
+
+      <div class="form-group">
+        <label for="genre">Genre</label>
+        <input type="text" name="genre" id="genre" placeholder="e.g. Pop, Rock, Jazz">
+      </div>
+
+      <div class="form-group">
+        <label for="release_date">Release Date</label>
+        <input type="date" name="release_date" id="release_date">
+      </div>
+
+      <div class="form-group">
+        <label for="audio">Audio File (MP3, WAV, etc.)</label>
+        <input type="file" name="audio" id="audio" accept="audio/*">
+      </div>
+
+      <div class="form-group">
+        <label for="album_cover">Album Cover (JPG, PNG, etc.)</label>
+        <input type="file" name="album_cover" id="album_cover" accept="image/*">
+      </div>
+
+      <button type="submit" class="submit-btn">Add Song</button>
+    </form>
+
+    <a class="back-link" href="{{ url_for('admin.dashboard') }}">← Back to Dashboard</a>
   </div>
-</form>
+</div>
 {% endblock %}

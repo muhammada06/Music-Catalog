@@ -134,6 +134,8 @@ def edit_song(song_id):
         if release_date_str:
             song.release_date = datetime.strptime(release_date_str, "%Y-%m-%d").date()
 
+        song.online_source = ','.join(u.strip() for u in request.form.getlist('online_sources') if u.strip())
+
         db.session.commit()
         return redirect(url_for('admin.dashboard'))
 

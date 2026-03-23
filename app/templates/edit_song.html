@@ -30,8 +30,43 @@
   {% endif %}
   <input type="file" name="album_cover" accept="image/*"><br><br>
 
+  <label>Online Sources:</label><br>
+  <div id="sources-container">
+    {% if song.online_source %}
+      {% for url in song.online_source.split(',') %}
+        <div class="source-row" style="display:flex; gap:8px; margin-bottom:6px;">
+          <input type="text" name="online_sources" class="source-input" value="{{ url.strip() }}" placeholder="https://..." style="flex:1; background:#0d1117; border:1px solid #30363d; border-radius:6px; padding:8px 12px; color:#e6edf3; font-size:0.9rem;">
+          <button type="button" onclick="removeSource(this)" style="background:#da3633; color:white; border:none; border-radius:6px; padding:8px 12px; cursor:pointer;">✕</button>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="source-row" style="display:flex; gap:8px; margin-bottom:6px;">
+        <input type="text" name="online_sources" class="source-input" placeholder="https://..." style="flex:1; background:#0d1117; border:1px solid #30363d; border-radius:6px; padding:8px 12px; color:#e6edf3; font-size:0.9rem;">
+        <button type="button" onclick="removeSource(this)" style="background:#da3633; color:white; border:none; border-radius:6px; padding:8px 12px; cursor:pointer;">✕</button>
+      </div>
+    {% endif %}
+  </div>
+  <button type="button" onclick="addSource()" style="background:#21262d; color:#e6edf3; border:1px solid #30363d; border-radius:6px; padding:7px 14px; cursor:pointer; margin-bottom:16px; font-size:0.85rem;">+ Add Source</button><br><br>
+
   <button type="submit">Save Changes</button>
 </form>
+
+<script>
+  function addSource() {
+    const row = document.createElement('div');
+    row.className = 'source-row';
+    row.style = 'display:flex; gap:8px; margin-bottom:6px;';
+    row.innerHTML = '<input type="text" name="online_sources" class="source-input" placeholder="https://..." style="flex:1; background:#0d1117; border:1px solid #30363d; border-radius:6px; padding:8px 12px; color:#e6edf3; font-size:0.9rem;">'
+      + '<button type="button" onclick="removeSource(this)" style="background:#da3633; color:white; border:none; border-radius:6px; padding:8px 12px; cursor:pointer;">✕</button>';
+    document.getElementById('sources-container').appendChild(row);
+  }
+
+  function removeSource(btn) {
+    const rows = document.querySelectorAll('.source-row');
+    if (rows.length > 1) btn.parentElement.remove();
+    else btn.previousElementSibling.value = '';
+  }
+</script>
 
 <form method="POST" action="{{ url_for('admin.removeDemo', song_id=song.id) }}" style="display:inline;">
   <button type="submit" class="button">Remove the demo song!</button>

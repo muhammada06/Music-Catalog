@@ -71,6 +71,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     overflow-y: auto;
   }
 
@@ -82,23 +83,24 @@
   }
 
   .detail-cover {
-    width: 200px;
-    height: 200px;
-    border-radius: 10px;
+    width: 280px;
+    height: 280px;
+    border-radius: 12px;
     object-fit: cover;
-    margin-bottom: 20px;
+    margin: 0 auto 20px;
+    display: block;
   }
 
   .detail-cover-placeholder {
-    width: 200px;
-    height: 200px;
-    border-radius: 10px;
+    width: 280px;
+    height: 280px;
+    border-radius: 12px;
     background: #21262d;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 3rem;
-    margin-bottom: 20px;
+    font-size: 4rem;
+    margin: 0 auto 20px;
     color: #484f58;
   }
 
@@ -157,7 +159,8 @@
             data-genre="{{ song.genre or '' }}"
             data-date="{{ song.release_date or '' }}"
             data-audio="{{ song.audio_file or '' }}"
-            data-cover="{{ url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '' }}">
+            data-cover="{{ url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '' }}"
+            data-online='{{ (song.online_source or "") | tojson }}'>
             <div class="s-title">{{ song.title }}</div>
             <div class="s-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}</div>
           </div>
@@ -178,6 +181,27 @@
 </div>
 
 <script>
+  function escAttr(s) {
+    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  }
+
+  function renderSources(online) {
+    if (!online) return '';
+    const urls = online.split(',').map(u => u.trim()).filter(Boolean);
+    if (!urls.length) return '';
+    return urls.map(url => {
+      try {
+        const domain = new URL(url).hostname;
+        const favicon = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&amp;sz=32';
+        return '<a href="' + escAttr(url) + '" target="_blank" title="' + escAttr(domain) + '" style="display:inline-flex;align-items:center;margin-right:10px;">'
+             + '<img src="' + favicon + '" width="24" height="24" style="border-radius:4px;">'
+             + '</a>';
+      } catch(e) {
+        return '<a href="' + escAttr(url) + '" target="_blank" style="color:#58a6ff;font-size:0.8rem;">🔗</a>';
+      }
+    }).join('');
+  }
+
   function selectSong(el) {
     document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
@@ -189,6 +213,7 @@
     const date   = el.dataset.date;
     const audio  = el.dataset.audio;
     const cover  = el.dataset.cover;
+    const online = JSON.parse(el.dataset.online || '""');
     const id     = el.dataset.id;
 
     const coverHtml = cover
@@ -207,6 +232,7 @@
         ${album ? `<div class="detail-row"><span class="label">Album</span><span class="value">${album}</span></div>` : ''}
         ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
         ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
+        ${renderSources(online) ? `<div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">${renderSources(online)}</span></div>` : ''}
       </div>
       ${audioHtml}
     `;
