@@ -1,36 +1,95 @@
 {% extends "base.html" %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<h1>Admin Dashboard</h1>
+<style>
+  .dashboard-wrap {
+    padding: 32px 40px;
+  }
 
-<p>Welcome, {{ current_user.username }} !! </p>
+  .dashboard-wrap h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #e6edf3;
+    margin-bottom: 4px;
+  }
 
-<a href="{{ url_for('admin.add_song') }}">
-    <button>Add Songs</button>
-</a>
+  .dashboard-wrap .welcome {
+    color: #8b949e;
+    margin-bottom: 24px;
+    font-size: 0.95rem;
+  }
 
+  .btn {
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    display: inline-block;
+    transition: background 0.15s, transform 0.1s;
+  }
 
-<h2>Your Songs </h2>
+  .btn:hover { transform: translateY(-1px); }
 
-{% if songs %}
-    {% for song in songs %}
-        <div style="margin-bottom:15px; padding:10px; border:1px solid #ccc; border-radius:8px;">
-            <b>{{ song.title }}</b> ({{song.album}}) — {{ song.artist }} - {{song.audio_file}}
+  .btn-blue  { background: #1f6feb; color: white; }
+  .btn-blue:hover  { background: #388bfd; }
 
-            <div style="margin-top:8px; display:flex; gap:10px;">
-                <a href="{{ url_for('admin.edit_song', song_id=song.id) }}">
-                    <button>Edit</button>
-                </a>
+  .btn-gray  { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
+  .btn-gray:hover  { background: #2d333b; }
 
-                <form method="POST" action="{{ url_for('admin.delete_song', song_id=song.id) }}" style="margin:0;">
-                    <button type="submit">Delete</button>
-                </form>
-            </div>
+  .btn-red   { background: #da3633; color: white; }
+  .btn-red:hover   { background: #f85149; }
+
+  .song-list { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+
+  .song-card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .song-info .song-title { font-weight: 700; font-size: 1rem; color: #e6edf3; }
+  .song-info .song-meta  { font-size: 0.85rem; color: #8b949e; margin-top: 2px; }
+
+  .song-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+  .empty { color: #8b949e; font-size: 0.95rem; margin-top: 24px; }
+</style>
+
+<div class="dashboard-wrap">
+  <h1>Admin Dashboard</h1>
+  <p class="welcome">Welcome, {{ current_user.username }}</p>
+
+  <a class="btn btn-blue" href="{{ url_for('admin.add_song') }}">+ Add Song</a>
+
+  <div class="song-list">
+    {% if songs %}
+      {% for song in songs %}
+        <div class="song-card">
+          <div class="song-info">
+            <div class="song-title">{{ song.title }}</div>
+            <div class="song-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}{% if song.audio_file %} · {{ song.audio_file }}{% endif %}</div>
+          </div>
+          <div class="song-actions">
+            <a class="btn btn-gray" href="{{ url_for('admin.edit_song', song_id=song.id) }}">Edit</a>
+            <form method="POST" action="{{ url_for('admin.delete_song', song_id=song.id) }}" style="margin:0;">
+              <button class="btn btn-red" type="submit">Delete</button>
+            </form>
+          </div>
         </div>
-    {% endfor %}
-{% else %}
-    <p>You haven't added any songs yet.</p>
-{% endif %}
+      {% endfor %}
+    {% else %}
+      <p class="empty">No songs in the catalog yet.</p>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}
