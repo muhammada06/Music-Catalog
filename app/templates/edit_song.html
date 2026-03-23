@@ -24,6 +24,12 @@
   <label>Demo Song:</label><br>
   <input type="file" name="audio" value="{{ song.audio_file }}"><br><br>
 
+  <label>Album Cover:</label><br>
+  {% if song.album_cover %}
+    <img src="{{ url_for('admin.serve_cover', filename=song.album_cover) }}" style="height:80px; border-radius:6px; margin-bottom:6px; display:block;">
+  {% endif %}
+  <input type="file" name="album_cover" accept="image/*"><br><br>
+
   <button type="submit">Save Changes</button>
 </form>
 

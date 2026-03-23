@@ -4,118 +4,212 @@
 
 {% block content %}
 <style>
-  header {
-    background: #777; /* gray navbar */
-  }
-
-  .dashboard-page {
-    background: linear-gradient(135deg, #1e1e2f, #121212);
-    color: white;
-    min-height: calc(100vh - 72px);
-    padding: 24px;
+  .dashboard-wrap {
+    padding: 28px 36px;
+    height: calc(100vh - 62px);
+    display: flex;
+    flex-direction: column;
     box-sizing: border-box;
   }
 
-  .dashboard-container {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 22px;
-    border-radius: 12px;
-    background: none;
-    box-shadow: none;
-  }
-
-  .dashboard-title {
-    font-size: 2.6rem;
-    margin-bottom: 8px;
-    text-align: center;
-  }
-
-  .dashboard-subtitle {
-    font-size: 1.2rem;
+  .dashboard-header {
     margin-bottom: 20px;
-    text-align: center;
-    color: #b8c1d7;
   }
 
-  .album-list {
-    display: grid;
-    gap: 12px;
+  .dashboard-header h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #e6edf3;
   }
 
-  .song-card {
-    border: none;
-    padding: 14px;
-    border-radius: 10px;
-    background: rgba(20, 30, 50, 0.85);
+  .dashboard-header .welcome {
+    font-size: 0.88rem;
+    color: #8b949e;
+    margin-top: 2px;
+  }
+
+  /* Split layout */
+  .split {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    gap: 20px;
+    flex: 1;
+    overflow: hidden;
   }
 
-  .song-info {
+  /* Left: song list */
+  .song-list {
+    width: 340px;
+    flex-shrink: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
+    gap: 8px;
   }
 
-  .song-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-  }
-
-  .song-meta {
-    color: #d3d9ee;
-    font-size: 0.95rem;
-  }
-
-  .button, .control-button {
-    border-radius: 7px;
-    padding: 10px 18px;
-    text-decoration: none;
-    font-weight: bold;
-    color: white;
-    border: 0;
+  .song-item {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    padding: 12px 14px;
     cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
   }
 
-  .control-button {
-    background: #0090ff;
-    transition: 0.2s;
+  .song-item:hover { background: #1c2128; border-color: #388bfd; }
+  .song-item.active { border-color: #58a6ff; background: #1c2128; }
+
+  .song-item .s-title { font-weight: 700; font-size: 0.95rem; color: #e6edf3; }
+  .song-item .s-meta  { font-size: 0.8rem; color: #8b949e; margin-top: 2px; }
+
+  /* Right: detail panel */
+  .detail-panel {
+    flex: 1;
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 10px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
   }
 
-  .control-button:hover {
-    background: #2aa4ff;
+  .detail-placeholder {
+    margin: auto;
+    color: #484f58;
+    font-size: 0.95rem;
+    text-align: center;
   }
 
+  .detail-cover {
+    width: 200px;
+    height: 200px;
+    border-radius: 10px;
+    object-fit: cover;
+    margin-bottom: 20px;
+  }
+
+  .detail-cover-placeholder {
+    width: 200px;
+    height: 200px;
+    border-radius: 10px;
+    background: #21262d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    margin-bottom: 20px;
+    color: #484f58;
+  }
+
+  .detail-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #e6edf3;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .detail-artist {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-bottom: 16px;
+  }
+
+  .detail-info {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+    border-bottom: 1px solid #21262d;
+    padding-bottom: 6px;
+  }
+
+  .detail-row .label { color: #8b949e; }
+  .detail-row .value { color: #e6edf3; font-weight: 600; }
+
+  .empty-msg { color: #8b949e; font-size: 0.9rem; text-align: center; padding: 20px; }
 </style>
 
-<div class="dashboard-page">
-  <div class="dashboard-container">
-    <h1 class="dashboard-title">Music Catalog Dashboard</h1>
-    <p class="dashboard-subtitle">Hello {{ current_user.username }}, here are your available songs.</p>
+<div class="dashboard-wrap">
+  <div class="dashboard-header">
+    <h1>Music Catalog</h1>
+    <div class="welcome">Hello, {{ current_user.username }}</div>
+  </div>
 
-    <div class="album-list">
+  <div class="split">
+    <!-- Left: list -->
+    <div class="song-list">
       {% if songs %}
         {% for song in songs %}
-          <div class="song-card">
-            <div class="song-info">
-              <div class="song-title">{{ song.title }}</div>
-              <div class="song-meta">{{ song.artist }} | {{ song.album or 'Unknown album' }} | {{ song.genre or 'No genre' }} | {{ url_for('user.play', song_id=song.id) }}</div>
-            </div>
-            {% if song.audio_file %}
-              <audio controls>
-                <source src="{{ url_for('user.play', song_id=song.id) }}" type="audio/mpeg">
-              </audio>
-            {% else %}
-              <a class="control-button" href="#">Play</a>
-            {% endif %}
+          <div class="song-item" onclick="selectSong(this)"
+            data-id="{{ song.id }}"
+            data-title="{{ song.title }}"
+            data-artist="{{ song.artist }}"
+            data-album="{{ song.album or '' }}"
+            data-genre="{{ song.genre or '' }}"
+            data-date="{{ song.release_date or '' }}"
+            data-audio="{{ song.audio_file or '' }}"
+            data-cover="{{ url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '' }}">
+            <div class="s-title">{{ song.title }}</div>
+            <div class="s-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}</div>
           </div>
         {% endfor %}
       {% else %}
-        <div style="text-align:center; color:#d8e2f5; padding:20px; border-radius:8px; border:1px dashed rgba(255,255,255,0.25);">No songs available yet.</div>
+        <p class="empty-msg">No songs available yet.</p>
       {% endif %}
+    </div>
+
+    <!-- Right: detail -->
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-placeholder">
+        <div style="font-size:2.5rem; margin-bottom:8px;">🎵</div>
+        Select a song to view details
+      </div>
     </div>
   </div>
 </div>
 
+<script>
+  function selectSong(el) {
+    document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+
+    const title  = el.dataset.title;
+    const artist = el.dataset.artist;
+    const album  = el.dataset.album;
+    const genre  = el.dataset.genre;
+    const date   = el.dataset.date;
+    const audio  = el.dataset.audio;
+    const cover  = el.dataset.cover;
+    const id     = el.dataset.id;
+
+    const coverHtml = cover
+      ? `<img class="detail-cover" src="${cover}" alt="Album Cover">`
+      : `<div class="detail-cover-placeholder">🎵</div>`;
+
+    const audioHtml = audio
+      ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
+      : '';
+
+    document.getElementById('detail-panel').innerHTML = `
+      ${coverHtml}
+      <div class="detail-title">${title}</div>
+      <div class="detail-artist">${artist}</div>
+      <div class="detail-info">
+        ${album ? `<div class="detail-row"><span class="label">Album</span><span class="value">${album}</span></div>` : ''}
+        ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
+        ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
+      </div>
+      ${audioHtml}
+    `;
+  }
+</script>
 {% endblock %}

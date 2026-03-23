@@ -5,20 +5,30 @@
 {% block content %}
 <style>
   .dashboard-wrap {
-    padding: 32px 40px;
+    padding: 28px 36px;
+    height: calc(100vh - 62px);
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
   }
 
-  .dashboard-wrap h1 {
-    font-size: 1.8rem;
+  .dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.6rem;
     font-weight: 700;
     color: #e6edf3;
-    margin-bottom: 4px;
   }
 
-  .dashboard-wrap .welcome {
+  .dashboard-header .welcome {
+    font-size: 0.88rem;
     color: #8b949e;
-    margin-bottom: 24px;
-    font-size: 0.95rem;
+    margin-top: 2px;
   }
 
   .btn {
@@ -34,62 +44,216 @@
   }
 
   .btn:hover { transform: translateY(-1px); }
-
   .btn-blue  { background: #1f6feb; color: white; }
   .btn-blue:hover  { background: #388bfd; }
-
   .btn-gray  { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
   .btn-gray:hover  { background: #2d333b; }
-
   .btn-red   { background: #da3633; color: white; }
   .btn-red:hover   { background: #f85149; }
 
-  .song-list { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+  /* Split layout */
+  .split {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    overflow: hidden;
+  }
 
-  .song-card {
+  /* Left: song list */
+  .song-list {
+    width: 340px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .song-item {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .song-item:hover { background: #1c2128; border-color: #388bfd; }
+  .song-item.active { border-color: #58a6ff; background: #1c2128; }
+
+  .song-item .s-title { font-weight: 700; font-size: 0.95rem; color: #e6edf3; }
+  .song-item .s-meta  { font-size: 0.8rem; color: #8b949e; margin-top: 2px; }
+
+  /* Right: detail panel */
+  .detail-panel {
+    flex: 1;
     background: #161b22;
     border: 1px solid #21262d;
     border-radius: 10px;
-    padding: 14px 18px;
+    padding: 28px;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    overflow-y: auto;
   }
 
-  .song-info .song-title { font-weight: 700; font-size: 1rem; color: #e6edf3; }
-  .song-info .song-meta  { font-size: 0.85rem; color: #8b949e; margin-top: 2px; }
+  .detail-placeholder {
+    margin: auto;
+    color: #484f58;
+    font-size: 0.95rem;
+    text-align: center;
+  }
 
-  .song-actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .detail-cover {
+    width: 200px;
+    height: 200px;
+    border-radius: 10px;
+    object-fit: cover;
+    margin-bottom: 20px;
+    background: #21262d;
+  }
 
-  .empty { color: #8b949e; font-size: 0.95rem; margin-top: 24px; }
+  .detail-cover-placeholder {
+    width: 200px;
+    height: 200px;
+    border-radius: 10px;
+    background: #21262d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    margin-bottom: 20px;
+    color: #484f58;
+  }
+
+  .detail-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #e6edf3;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .detail-artist {
+    font-size: 1rem;
+    color: #8b949e;
+    margin-bottom: 16px;
+  }
+
+  .detail-info {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.88rem;
+    border-bottom: 1px solid #21262d;
+    padding-bottom: 6px;
+  }
+
+  .detail-row .label { color: #8b949e; }
+  .detail-row .value { color: #e6edf3; font-weight: 600; }
+
+  .detail-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding-top: 16px;
+  }
+
+  .empty-msg { color: #8b949e; font-size: 0.9rem; text-align: center; padding: 20px; }
 </style>
 
 <div class="dashboard-wrap">
-  <h1>Admin Dashboard</h1>
-  <p class="welcome">Welcome, {{ current_user.username }}</p>
+  <div class="dashboard-header">
+    <div>
+      <h1>Admin Dashboard</h1>
+      <div class="welcome">Welcome, {{ current_user.username }}</div>
+    </div>
+    <a class="btn btn-blue" href="{{ url_for('admin.add_song') }}">+ Add Song</a>
+  </div>
 
-  <a class="btn btn-blue" href="{{ url_for('admin.add_song') }}">+ Add Song</a>
+  <div class="split">
+    <!-- Left: list -->
+    <div class="song-list">
+      {% if songs %}
+        {% for song in songs %}
+          <div class="song-item" onclick="selectSong(this)"
+            data-id="{{ song.id }}"
+            data-title="{{ song.title }}"
+            data-artist="{{ song.artist }}"
+            data-album="{{ song.album or '' }}"
+            data-genre="{{ song.genre or '' }}"
+            data-date="{{ song.release_date or '' }}"
+            data-audio="{{ song.audio_file or '' }}"
+            data-cover="{{ url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '' }}"
+            data-edit="{{ url_for('admin.edit_song', song_id=song.id) }}"
+            data-delete="{{ url_for('admin.delete_song', song_id=song.id) }}">
+            <div class="s-title">{{ song.title }}</div>
+            <div class="s-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty-msg">No songs yet.</p>
+      {% endif %}
+    </div>
 
-  <div class="song-list">
-    {% if songs %}
-      {% for song in songs %}
-        <div class="song-card">
-          <div class="song-info">
-            <div class="song-title">{{ song.title }}</div>
-            <div class="song-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}{% if song.audio_file %} · {{ song.audio_file }}{% endif %}</div>
-          </div>
-          <div class="song-actions">
-            <a class="btn btn-gray" href="{{ url_for('admin.edit_song', song_id=song.id) }}">Edit</a>
-            <form method="POST" action="{{ url_for('admin.delete_song', song_id=song.id) }}" style="margin:0;">
-              <button class="btn btn-red" type="submit">Delete</button>
-            </form>
-          </div>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p class="empty">No songs in the catalog yet.</p>
-    {% endif %}
+    <!-- Right: detail -->
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-placeholder">
+        <div style="font-size:2.5rem; margin-bottom:8px;">🎵</div>
+        Select a song to view details
+      </div>
+    </div>
   </div>
 </div>
+
+<script>
+  function selectSong(el) {
+    document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+
+    const title   = el.dataset.title;
+    const artist  = el.dataset.artist;
+    const album   = el.dataset.album;
+    const genre   = el.dataset.genre;
+    const date    = el.dataset.date;
+    const audio   = el.dataset.audio;
+    const cover   = el.dataset.cover;
+    const editUrl = el.dataset.edit;
+    const delUrl  = el.dataset.delete;
+
+    const coverHtml = cover
+      ? `<img class="detail-cover" src="${cover}" alt="Album Cover">`
+      : `<div class="detail-cover-placeholder">🎵</div>`;
+
+    const audioHtml = audio
+      ? `<audio controls style="width:100%; margin-bottom:12px;"><source src="/user/play/${el.dataset.id}" type="audio/mpeg"></audio>`
+      : '';
+
+    document.getElementById('detail-panel').innerHTML = `
+      ${coverHtml}
+      <div class="detail-title">${title}</div>
+      <div class="detail-artist">${artist}</div>
+      <div class="detail-info">
+        ${album ? `<div class="detail-row"><span class="label">Album</span><span class="value">${album}</span></div>` : ''}
+        ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
+        ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
+        ${audio ? `<div class="detail-row"><span class="label">Audio</span><span class="value">${audio}</span></div>` : ''}
+      </div>
+      ${audioHtml}
+      <div class="detail-actions">
+        <a class="btn btn-gray" href="${editUrl}">Edit</a>
+        <form method="POST" action="${delUrl}" style="margin:0;">
+          <button class="btn btn-red" type="submit">Delete</button>
+        </form>
+      </div>
+    `;
+  }
+</script>
 {% endblock %}

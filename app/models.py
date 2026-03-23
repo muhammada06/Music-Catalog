@@ -29,6 +29,7 @@ class Song(db.Model):
     genre = db.Column(db.String(100))
     release_date = db.Column(db.Date)
     audio_file = db.Column(db.String(255))
+    album_cover = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     
 @login_manager.user_loader
