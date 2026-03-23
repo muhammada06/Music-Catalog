@@ -33,3 +33,9 @@ def test_song_optional_fields():
     assert song.album is None
     assert song.genre is None
     assert song.audio_file is None
+    assert song.release_date is None
+
+def test_songs_are_independent():
+    song1 = Song(title="test song", artist="artist1")
+    song2 = Song(title="test song", artist="artist2")
+    assert song1.artist != song2.artist
