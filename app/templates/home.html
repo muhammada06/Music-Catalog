@@ -1,99 +1,268 @@
-﻿<!doctype html>
+<!doctype html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Music Catalog</title>
-</head>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      min-height: 100vh;
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 48px;
+      border-bottom: 1px solid #21262d;
+      background: #161b22;
+    }
+
+    .nav-logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #58a6ff;
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 12px;
+    }
+
+    .nav-links a, .nav-links button {
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: #e6edf3;
+      border: 1px solid #30363d !important;
+    }
+    .btn-ghost:hover { background: #21262d; }
+
+    .btn-primary {
+      background: #238636;
+      color: white;
+    }
+    .btn-primary:hover { background: #2ea043; }
+
+    .btn-red {
+      background: #da3633;
+      color: white;
+    }
+    .btn-red:hover { background: #f85149; }
+
+    /* Hero */
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 24px;
+      gap: 16px;
+    }
+
+    .hero-badge {
+      font-size: 0.8rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #58a6ff;
+      background: rgba(88, 166, 255, 0.1);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      padding: 4px 14px;
+      border-radius: 20px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      color: #e6edf3;
+    }
+
+    .hero h1 span {
+      color: #58a6ff;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: #8b949e;
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .hero-actions a {
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .hero-actions a:hover { transform: translateY(-1px); }
+
+    .divider {
+      width: 100%;
+      max-width: 600px;
+      border: none;
+      border-top: 1px solid #21262d;
+      margin: 12px 0;
+    }
+
+    .role-section {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .role-card {
+      background: #161b22;
+      border: 1px solid #21262d;
+      border-radius: 12px;
+      padding: 24px 32px;
+      text-align: center;
+      width: 220px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .role-card .role-icon { font-size: 2rem; }
+    .role-card .role-title { font-weight: 700; font-size: 1rem; }
+    .role-card .role-desc { font-size: 0.82rem; color: #8b949e; line-height: 1.4; }
+
+    .role-card a {
+      margin-top: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.8rem;
+      color: #484f58;
+      border-top: 1px solid #21262d;
+    }
+
+    .flash-messages {
+      padding: 12px 48px 0;
+    }
+
+    .flash-msg {
+      padding: 10px 16px;
+      border-radius: 6px;
+      background: #1f2937;
+      border: 1px solid #30363d;
+      color: #e6edf3;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
 <body>
 
-<style>
-  body{
-    background: linear-gradient(135deg, #1e1e2f, #121212);
-    color: white;
-    font-family: Arial, sans-serif;
-  }
+  <nav>
+    <a class="nav-logo" href="/">♪ Music Catalog</a>
+    <div class="nav-links">
+      {% if current_user.is_authenticated %}
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin.dashboard') }}" class="btn-ghost">Dashboard</a>
+        {% else %}
+          <a href="{{ url_for('user.dashboard') }}" class="btn-ghost">Dashboard</a>
+        {% endif %}
+        <form action="{{ url_for('auth.logout') }}" method="get" style="display:inline;">
+          <button type="submit" class="btn-ghost">Logout</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn-ghost">Login</a>
+      {% endif %}
+    </div>
+  </nav>
 
-  .homeContainer{
-    text-align: center;
-    margin-top: 100px;
-  }
-
-  /*Creating buttons*/
-  .button{
-    display: inline-block;
-    margin-top: 10px;
-    padding: 12px 24px; 
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: bold;
-  }
-
-  .adminButton{
-    background-color: red;
-    color: white;
-  }
-
-  .userButton {
-    background-color: green;
-    color: white;
-  }
-
-  .loginButton{
-    background-color: #3498db;
-    color: white;
-  }
-
-  .picture{
-    position: fixed;
-    bottom: 0;
-    height: 80vh;
-  }
-
-  /*Adding pictures*/
-  .leftPicture{
-    left: -100px;
-  }
-
-  .rightPicture{
-    right: 50px;
-  }
-
-</style>
-
-<!-- flash messages (home only) -->
-{% for category, message in get_flashed_messages(with_categories=true) %}
-  <div style="margin:10px auto; width:80%; padding:10px; background:#f0f0f0; border:1px solid #ccc; color:#000; text-align:center; border-radius:5px;">{{ message }}</div>
-{% endfor %}
-
-<!-- Images for background-->
-<img src="/static/backgroundImageLeft.png" class="picture leftPicture">
-<img src="/static/backgroundImageRight(2).png" class="picture rightPicture">
-
-
-<div class="homeContainer">
-
-  <h1>Music Catalog</h1>
-
-  {% if current_user.is_authenticated %}
-    <p>Welcome back, {{ current_user.username }}!</p>
-    {% if current_user.is_admin %}
-      <a class="button adminButton" href="{{ url_for('admin.dashboard') }}">Go to Admin Dashboard</a>
-    {% else %}
-      <a class="button userButton" href="{{ url_for('user.dashboard') }}">Go to User Dashboard</a>
-    {% endif %}
-    <a class="button loginButton" href="{{ url_for('auth.logout') }}">Logout</a>
-  {% else %}
-    <p>If you are a label or artist, please create your account through here:</p>
-    <a class="button adminButton" href="{{ url_for('admin.get') }}">Create Admin Account</a>
-
-    <p style="margin-top:40px;">If you are someone who loves music or just wants to listen to it, please create your account through here:</p>
-    <a class="button userButton" href="{{ url_for('user.get') }}">Create User Account</a>
-
-    <p style="margin-top:40px;">Already have an account?</p>
-    <a class="button loginButton" href="{{ url_for('auth.login') }}">Login</a>
+  {% if get_flashed_messages() %}
+    <div class="flash-messages">
+      {% for message in get_flashed_messages() %}
+        <div class="flash-msg">{{ message }}</div>
+      {% endfor %}
+    </div>
   {% endif %}
 
-</div>
+  <main class="hero">
+    <div class="hero-badge">Music Catalog</div>
+
+    {% if current_user.is_authenticated %}
+      <h1>Welcome back,<br><span>{{ current_user.username }}</span></h1>
+      <p>Pick up where you left off.</p>
+      <div class="hero-actions">
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin.dashboard') }}" style="background:#238636; color:white;">Go to Dashboard</a>
+        {% else %}
+          <a href="{{ url_for('user.dashboard') }}" style="background:#1f6feb; color:white;">Browse Music</a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" style="background:#21262d; color:#e6edf3; border:1px solid #30363d;">Logout</a>
+      </div>
+
+    {% else %}
+      <h1>Your music,<br><span>all in one place.</span></h1>
+      <p>Discover, catalog, and stream music. Built for artists and listeners alike.</p>
+
+      <div class="hero-actions">
+        <a href="{{ url_for('auth.login') }}" style="background:#1f6feb; color:white;">Sign In</a>
+      </div>
+
+      <hr class="divider">
+
+      <div class="role-section">
+        <div class="role-card">
+          <div class="role-icon">🎤</div>
+          <div class="role-title">Artist / Label</div>
+          <div class="role-desc">Upload and manage your catalog, add songs and demos.</div>
+          <a href="{{ url_for('admin.get') }}" style="background:#da3633; color:white;">Create Admin Account</a>
+        </div>
+        <div class="role-card">
+          <div class="role-icon">🎧</div>
+          <div class="role-title">Listener</div>
+          <div class="role-desc">Browse the full catalog and stream available tracks.</div>
+          <a href="{{ url_for('user.get') }}" style="background:#238636; color:white;">Create User Account</a>
+        </div>
+      </div>
+    {% endif %}
+  </main>
+
+  <footer>&copy; 2026 Group Project. All rights reserved.</footer>
+
 </body>
 </html>
