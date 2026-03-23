@@ -55,7 +55,10 @@
 </head>
 <body>
   <nav class="base-nav">
-    <a class="nav-logo" href="/">♪ Music Catalog</a>
+    <a class="nav-logo" href="/" style="display:flex; align-items:center; gap:8px;">
+      <img src="/static/watermelon.png" style="height:28px; width:28px; object-fit:contain;">
+      <span style="color:#e53935;">Music</span><span style="color:#4caf50;"> Catalog</span>
+    </a>
     <div class="nav-links">
       {% if current_user.is_authenticated %}
         {% if current_user.is_admin %}

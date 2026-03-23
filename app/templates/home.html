@@ -195,18 +195,12 @@
 <body>
 
   <nav>
-    <a class="nav-logo" href="/">♪ Music Catalog</a>
+    <a class="nav-logo" href="/" style="display:flex; align-items:center; gap:8px;">
+      <img src="/static/watermelon.png" style="height:28px; width:28px; object-fit:contain;">
+      <span style="color:#e53935;">Music</span><span style="color:#4caf50;"> Catalog</span>
+    </a>
     <div class="nav-links">
-      {% if current_user.is_authenticated %}
-        {% if current_user.is_admin %}
-          <a href="{{ url_for('admin.dashboard') }}" class="btn-ghost">Dashboard</a>
-        {% else %}
-          <a href="{{ url_for('user.dashboard') }}" class="btn-ghost">Dashboard</a>
-        {% endif %}
-        <form action="{{ url_for('auth.logout') }}" method="get" style="display:inline;">
-          <button type="submit" class="btn-ghost">Logout</button>
-        </form>
-      {% else %}
+      {% if not current_user.is_authenticated %}
         <a href="{{ url_for('auth.login') }}" class="btn-ghost">Login</a>
       {% endif %}
     </div>
