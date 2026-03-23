@@ -4,60 +4,75 @@
   <meta charset="utf-8">
   <title>{% block title %}Music Catalog{% endblock %}</title>
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
-      background: #0d1222;
-      color: white;
-      font-family: Arial, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Segoe UI', Arial, sans-serif;
     }
 
-    header {
-      background: #777;
-      padding: 12px;
-      border-bottom: 1px solid #444;
+    .base-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 48px;
+      background: #161b22;
+      border-bottom: 1px solid #21262d;
     }
 
-    nav a, nav button {
-      color: white;
+    .base-nav .nav-logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #58a6ff;
       text-decoration: none;
-      margin-right: 12px;
+      letter-spacing: 1px;
     }
 
-    nav button {
-      background: #333;
-      border: 1px solid #999;
-      padding: 4px 10px;
-      border-radius: 4px;
+    .base-nav .nav-links {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .base-nav .nav-links a, .base-nav button {
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
       cursor: pointer;
-      color: white;
+      border: 1px solid #30363d;
+      background: transparent;
+      color: #e6edf3;
+      transition: background 0.15s;
     }
 
-    main {
-      padding: 12px;
-      background: transparent;
-    }
+    .base-nav .nav-links a:hover, .base-nav button:hover { background: #21262d; }
+
+    main { background: transparent; }
   </style>
 </head>
 <body>
-  <header>
-    <nav>
-      <a href="/">Home</a>
-      <span style="margin-left:12px;"></span>
-
+  <nav class="base-nav">
+    <a class="nav-logo" href="/">♪ Music Catalog</a>
+    <div class="nav-links">
       {% if current_user.is_authenticated %}
-      <!-- Logout button visible only when logged in -->
-      <form action="{{ url_for('auth.logout') }}" method="get" style="display:inline;">
-        <button type="submit">Logout</button>
-      </form>
-      {% else %}
-      <!-- show login link when not authenticated -->
-      <a href="{{ url_for('auth.login') }}">Login</a>
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+        {% else %}
+          <a href="{{ url_for('user.dashboard') }}">Dashboard</a>
+        {% endif %}
+        <form action="{{ url_for('auth.logout') }}" method="get" style="display:inline;">
+          <button type="submit">Logout</button>
+        </form>
+      {% elif request.endpoint != 'auth.login' %}
+        <a href="{{ url_for('auth.login') }}">Login</a>
       {% endif %}
-      <!-- (If backend uses POST for logout, change method to post) -->
-    </nav>
-  </header>
+    </div>
+  </nav>
 
-  <main style="padding:12px;">
+  <main>
     {% for category, message in get_flashed_messages(with_categories=true) %}
       {% if not (request.endpoint == 'auth.login' and category == 'logout') %}
         <script>alert("{{ message }}");</script>

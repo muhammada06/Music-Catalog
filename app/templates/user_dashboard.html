@@ -94,10 +94,6 @@
     <h1 class="dashboard-title">Music Catalog Dashboard</h1>
     <p class="dashboard-subtitle">Hello {{ current_user.username }}, here are your available songs.</p>
 
-    <div style="display:flex; gap:10px; justify-content:center; margin-bottom:18px;">
-      <a class="button loginButton" href="{{ url_for('auth.logout') }}">Logout</a>
-    </div>
-
     <div class="album-list">
       {% if songs %}
         {% for song in songs %}

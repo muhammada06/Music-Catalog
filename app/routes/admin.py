@@ -30,9 +30,11 @@ def creation():
         new_user.set_username(request.form['username'].strip())
         new_user.set_password(request.form['password'])
         new_user.set_is_admin()
-        db.session.add(new_user) 
+        db.session.add(new_user)
         db.session.commit()
-    return redirect(url_for("admin.dashboard"))
+        flash("Admin account created. Please log in.", "success")
+        return redirect(url_for("auth.login"))
+    return redirect(url_for("auth.login"))
 
 @admin.route('/dashboard')
 @login_required
