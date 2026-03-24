@@ -159,7 +159,7 @@
             data-genre="{{ song.genre or '' }}"
             data-date="{{ song.release_date or '' }}"
             data-audio="{{ song.audio_file or '' }}"
-            data-cover="{{ url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '' }}"
+            data-cover="{{ song.album_cover if song.album_cover and song.album_cover.startswith('http') else (url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '') }}"
             data-online='{{ (song.online_source or "") | tojson }}'>
             <div class="s-title">{{ song.title }}</div>
             <div class="s-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}</div>

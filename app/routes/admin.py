@@ -5,6 +5,9 @@ from app import db
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
+import csv
+import io
+import json
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -87,6 +90,94 @@ def add_song():
         return redirect(url_for('admin.dashboard'))
 
     return render_template('add_song.html')
+
+
+COLUMN_MAP = {
+    'title':        'title',
+    'artist':       'artist',
+    'album':        'album',
+    'genre':        'genre',
+    'release_date': 'release_date',
+    'album_cover':  'album_cover',
+    'spotify_link': 'online_source',
+}
+
+def map_columns(row: dict) -> dict:
+    result = {}
+    for key, value in row.items():
+        normalized = key.strip().lower()
+        if normalized in COLUMN_MAP:
+            result[COLUMN_MAP[normalized]] = value
+    return result
+
+@admin.route('/import', methods=['POST'])
+@login_required
+def import_songs():
+    admin_required()
+    file = request.files.get('import_file')
+    if not file or not file.filename:
+        flash("No file uploaded.")
+        return redirect(url_for('admin.dashboard'))
+
+    raw = file.read().decode('utf-8', errors='replace')
+    fname = file.filename.lower()
+
+    if fname.endswith('.csv'):
+        rows = list(csv.DictReader(io.StringIO(raw)))
+    elif fname.endswith('.json'):
+        try:
+            rows = json.loads(raw)
+            if not isinstance(rows, list):
+                flash("JSON must be an array of objects.")
+                return redirect(url_for('admin.dashboard'))
+        except json.JSONDecodeError:
+            flash("Invalid JSON file.")
+            return redirect(url_for('admin.dashboard'))
+    else:
+        flash("Unsupported file type. Upload .csv or .json.")
+        return redirect(url_for('admin.dashboard'))
+
+    imported = skipped = 0
+    for row in rows:
+        mapped = map_columns(row)
+        title  = (mapped.get('title')  or '').strip()
+        artist = (mapped.get('artist') or '').strip()
+        if not title or not artist:
+            skipped += 1
+            continue
+
+        release_date = None
+        for fmt in ('%Y-%m-%d', '%m/%d/%Y', '%d-%m-%Y'):
+            try:
+                release_date = datetime.strptime((mapped.get('release_date') or '').strip(), fmt).date()
+                break
+            except ValueError:
+                continue
+
+        song = Song(
+            title=title,
+            artist=artist,
+            album=(mapped.get('album') or '').strip() or None,
+            genre=(mapped.get('genre') or '').strip() or None,
+            release_date=release_date,
+            audio_file=None,
+            album_cover=((mapped.get('album_cover') or '')[:255]) or None,
+            online_source=(mapped.get('online_source') or '').strip() or None,
+            user_id=current_user.id
+        )
+        db.session.add(song)
+        imported += 1
+
+    try:
+        db.session.commit()
+        flash(f"Successfully imported {imported} song(s).")
+        if skipped:
+            flash(f"Skipped {skipped} row(s) — missing title or artist.")
+    except Exception:
+        db.session.rollback()
+        flash("Database error during import.")
+
+    return redirect(url_for('admin.dashboard'))
 
 
 @admin.route('/cover/<filename>')

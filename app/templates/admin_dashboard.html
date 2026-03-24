@@ -41,6 +41,8 @@
     text-decoration: none;
     display: inline-block;
     transition: background 0.15s, transform 0.1s;
+    line-height: 1.4;
+    box-sizing: border-box;
   }
 
   .btn:hover { transform: translateY(-1px); }
@@ -177,7 +179,10 @@
       <h1>Admin Dashboard</h1>
       <div class="welcome">Welcome, {{ current_user.username }}</div>
     </div>
-    <a class="btn btn-blue" href="{{ url_for('admin.add_song') }}">+ Add Song</a>
+    <div style="display:flex; gap:10px; align-items:center;">
+      <a class="btn btn-blue" href="{{ url_for('admin.add_song') }}">+ Add Song</a>
+      <button class="btn btn-gray" onclick="document.getElementById('import-modal').style.display='flex'">Import</button>
+    </div>
   </div>
 
   <div class="split">
@@ -193,7 +198,7 @@
             data-genre="{{ song.genre or '' }}"
             data-date="{{ song.release_date or '' }}"
             data-audio="{{ song.audio_file or '' }}"
-            data-cover="{{ url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '' }}"
+            data-cover="{{ song.album_cover if song.album_cover and song.album_cover.startswith('http') else (url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '') }}"
             data-online='{{ (song.online_source or "") | tojson }}'
             data-edit="{{ url_for('admin.edit_song', song_id=song.id) }}"
             data-delete="{{ url_for('admin.delete_song', song_id=song.id) }}">
@@ -213,6 +218,26 @@
         Select a song to view details
       </div>
     </div>
+  </div>
+</div>
+
+<div id="import-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:999;">
+  <div style="background:#161b22; border:1px solid #21262d; border-radius:12px; padding:32px 36px; width:100%; max-width:420px;">
+    <h2 style="color:#e6edf3; font-size:1.2rem; font-weight:700; margin-bottom:20px;">Import Songs</h2>
+    <form method="POST" action="{{ url_for('admin.import_songs') }}" enctype="multipart/form-data">
+      <div style="margin-bottom:16px;">
+        <label style="font-size:0.85rem; font-weight:600; color:#c9d1d9; display:block; margin-bottom:6px;">File (CSV or JSON)</label>
+        <input type="file" name="import_file" accept=".csv,.json" required style="font-size:0.85rem; color:#8b949e;">
+      </div>
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button type="submit" class="btn btn-blue" style="flex:1;">Import</button>
+        <button type="button" class="btn btn-gray" onclick="document.getElementById('import-modal').style.display='none'">Cancel</button>
+      </div>
+    </form>
+    <p style="font-size:0.78rem; color:#8b949e; margin-top:14px;">
+      CSV columns: title, artist, album, genre, release_date, album_cover, spotify_link<br>
+      JSON: array of objects with the same keys.
+    </p>
   </div>
 </div>
 

@@ -26,7 +26,7 @@
 
   <label>Album Cover:</label><br>
   {% if song.album_cover %}
-    <img src="{{ url_for('admin.serve_cover', filename=song.album_cover) }}" style="height:80px; border-radius:6px; margin-bottom:6px; display:block;">
+    <img src="{{ song.album_cover if song.album_cover.startswith('http') else url_for('admin.serve_cover', filename=song.album_cover) }}" style="height:80px; border-radius:6px; margin-bottom:6px; display:block;">
   {% endif %}
   <input type="file" name="album_cover" accept="image/*"><br><br>
 
