@@ -26,6 +26,7 @@ def creation():
         
         new_user.set_username(request.form['username'].strip())
         new_user.set_password(request.form['password'])
+        new_user.set_email(request.form['email'].strip())
         db.session.add(new_user)
         db.session.commit()
         flash("User created successfully. Please log in.", "success")

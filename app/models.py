@@ -7,13 +7,17 @@ class User(UserMixin, db.Model):
     id         = db.Column(db.Integer, primary_key=True)
     username   = db.Column(db.String(80),  unique=True, nullable=False)
     password   = db.Column(db.String(200), nullable=False)
+    email      = db.Column(db.String(255), unique=True, nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
-    def set_username(self, plain_user_password):
-        self.username = plain_user_password
+    def set_username(self, plain_user_name):
+        self.username = plain_user_name
 
     def set_password(self, plain_user_password):
         self.password = generate_password_hash(plain_user_password)
+
+    def set_email(self, plain_user_email):
+        self.email = plain_user_email
 
     def set_is_admin(self):
         self.is_admin = True

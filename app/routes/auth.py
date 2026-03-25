@@ -1,7 +1,12 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models import User
+import smtplib
+from email.message import EmailMessage
+from email.headerregistry import Address
+from email.utils import make_msgid
+from itsdangerous import URLSafeTimedSerializer
 
 authPage = Blueprint('auth', __name__)
      
@@ -28,7 +33,62 @@ def login():
         flash('Invalid email or password.', 'error')
         return render_template('login.html')
     
-    return render_template('login.html')    
+    return render_template('login.html')
+
+@authPage.route("/forgot", methods=["GET", "POST"])
+def forgotPassword():
+    if request.method == 'POST':
+        username = request.form['username'].strip()
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            flash("Username is not found! Please create an account or try again!")
+            return redirect(url_for("auth.login"))
+        msg = EmailMessage()
+        msg['Subject'] = "Song Catalog: Forgot My Password!"
+        msg['From'] = Address("Watermelion Inc.", "sajan.selvasangar", "ontariotechu.net")
+        msg['To'] = user.email
+
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        token = s.dumps(user.email, salt='password-reset-salt')
+
+        msg.set_content(f"""\
+Hi {user.username}!
+
+You have requested to reset your password! 
+Click here to redirected to the reset page link:
+http://127.0.0.1:8080/reset_password/{token}
+If you did not request this link please ignore this message!
+
+From Watermelion Inc.
+""")
+        with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+            smtp.starttls()
+            smtp.login("sajan.selvasangar@ontariotechu.net", "zqhhqoclqmipfmnx")
+            smtp.send_message(msg)
+
+    flash("Password reset link sent! Check your email.")
+    return redirect(url_for('auth.login'))
+        
+@authPage.route("/reset_password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    try:
+        s = URLSafeTimedSerializer(current_app.config['SECRET_KEY'])
+        email = s.loads(token, salt='password-reset-salt', max_age=3600)  # 1 hour
+    except Exception:
+        flash("The reset link is invalid or expired.")
+        return redirect(url_for('authPage.login'))
+
+    if request.method == "POST":
+        new_password = request.form['password']
+        user = User.query.filter_by(email=email).first()
+        user.set_password(new_password)
+        db.session.commit()
+        flash("Password successfully updated!")
+        return redirect(url_for('authPage.login'))
+
+    return render_template("reset_password.html")
+
+
 
 
 @authPage.route("/logout")

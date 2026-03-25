@@ -35,6 +35,13 @@ def creation():
 
         new_user.set_username(request.form['username'].strip())
         new_user.set_password(request.form['password'])
+
+        existing_email = User.query.filter_by(email=request.form['email'].strip()).first()
+        if existing_email:
+            flash("Email already registered. Try logging in or use a different email.")
+            return redirect(url_for("auth.login"))
+        
+        new_user.set_email(request.form['email'].strip())
         new_user.set_is_admin()
         db.session.add(new_user)
         db.session.commit()
