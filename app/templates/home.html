@@ -43,7 +43,7 @@
             {% if current_user.is_admin %}
               <a href="{{ url_for('admin.dashboard') }}" class="header-btn header-btn-green">Go to Dashboard</a>
             {% else %}
-              <a href="{{ url_for('user.dashboard') }}" class="header-btn header-btn-blue">Browse &amp; Stream</a>
+              <a href="{{ url_for('user.dashboard') }}" class="header-btn header-btn-blue">Browse Music</a>
             {% endif %}
           </div>
         {% else %}
@@ -53,7 +53,10 @@
       </div>
 
       {% macro song_card(song) %}
-        <div class="song-card">
+        <div class="song-card {% if current_user.is_authenticated %}song-card--link{% endif %}"
+          {% if current_user.is_authenticated %}
+            onclick="window.location='{{ url_for('admin.dashboard') if current_user.is_admin else url_for('user.dashboard') }}?song={{ song.id }}'"
+          {% endif %}>
           <div class="song-card-cover">
             {% if song.album_cover %}
               {% if song.album_cover.startswith('http') %}

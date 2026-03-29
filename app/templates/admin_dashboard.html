@@ -160,6 +160,12 @@
     ['genre-filter', 'sort-select'].forEach(id =>
       document.getElementById(id).addEventListener('change', applyFiltersAndSort)
     );
+
+    const songId = new URLSearchParams(window.location.search).get('song');
+    if (songId) {
+      const el = document.querySelector(`.song-item[data-id="${songId}"]`);
+      if (el) { el.scrollIntoView({ block: 'nearest' }); selectSong(el); }
+    }
   });
 
   function escAttr(s) {

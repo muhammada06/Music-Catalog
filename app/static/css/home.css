@@ -251,6 +251,8 @@ footer {
   transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
+.song-card--link { cursor: pointer; }
+
 .song-card:hover {
   border-color: #388bfd;
   transform: translateY(-3px);
