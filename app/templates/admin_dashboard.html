@@ -2,176 +2,31 @@
 
 {% block title %}Admin Dashboard{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block nav_center %}
+<div class="nav-search">
+  <div class="nav-search-input">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+    <input type="text" id="search-input" placeholder="Search songs, artists, albums…">
+  </div>
+  <select class="nav-filter-select" id="genre-filter">
+    <option value="">All genres</option>
+  </select>
+  <select class="nav-filter-select" id="sort-select">
+    <option value="">Default order</option>
+    <option value="artist-asc">Artist A → Z</option>
+    <option value="artist-desc">Artist Z → A</option>
+    <option value="year-desc">Year: Newest first</option>
+    <option value="year-asc">Year: Oldest first</option>
+  </select>
+  <span class="nav-search-count" id="search-count"></span>
+</div>
+{% endblock %}
+
 {% block content %}
-<style>
-  .dashboard-wrap {
-    padding: 28px 36px;
-    height: calc(100vh - 62px);
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-  }
-
-  .dashboard-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-
-  .dashboard-header h1 {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #e6edf3;
-  }
-
-  .dashboard-header .welcome {
-    font-size: 0.88rem;
-    color: #8b949e;
-    margin-top: 2px;
-  }
-
-  .btn {
-    padding: 8px 18px;
-    border-radius: 6px;
-    font-size: 0.88rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-    text-decoration: none;
-    display: inline-block;
-    transition: background 0.15s, transform 0.1s;
-    line-height: 1.4;
-    box-sizing: border-box;
-  }
-
-  .btn:hover { transform: translateY(-1px); }
-  .btn-blue  { background: #1f6feb; color: white; }
-  .btn-blue:hover  { background: #388bfd; }
-  .btn-gray  { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
-  .btn-gray:hover  { background: #2d333b; }
-  .btn-red   { background: #da3633; color: white; }
-  .btn-red:hover   { background: #f85149; }
-
-  /* Split layout */
-  .split {
-    display: flex;
-    gap: 20px;
-    flex: 1;
-    overflow: hidden;
-  }
-
-  /* Left: song list */
-  .song-list {
-    width: 340px;
-    flex-shrink: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .song-item {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 8px;
-    padding: 12px 14px;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-  }
-
-  .song-item:hover { background: #1c2128; border-color: #388bfd; }
-  .song-item.active { border-color: #58a6ff; background: #1c2128; }
-
-  .song-item .s-title { font-weight: 700; font-size: 0.95rem; color: #e6edf3; }
-  .song-item .s-meta  { font-size: 0.8rem; color: #8b949e; margin-top: 2px; }
-
-  /* Right: detail panel */
-  .detail-panel {
-    flex: 1;
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 10px;
-    padding: 28px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow-y: auto;
-  }
-
-  .detail-placeholder {
-    margin: auto;
-    color: #484f58;
-    font-size: 0.95rem;
-    text-align: center;
-  }
-
-  .detail-cover {
-    width: 280px;
-    height: 280px;
-    border-radius: 12px;
-    object-fit: cover;
-    margin: 0 auto 20px;
-    display: block;
-    background: #21262d;
-  }
-
-  .detail-cover-placeholder {
-    width: 280px;
-    height: 280px;
-    border-radius: 12px;
-    background: #21262d;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 4rem;
-    margin: 0 auto 20px;
-    color: #484f58;
-  }
-
-  .detail-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #e6edf3;
-    text-align: center;
-    margin-bottom: 4px;
-  }
-
-  .detail-artist {
-    font-size: 1rem;
-    color: #8b949e;
-    margin-bottom: 16px;
-  }
-
-  .detail-info {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 20px;
-  }
-
-  .detail-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.88rem;
-    border-bottom: 1px solid #21262d;
-    padding-bottom: 6px;
-  }
-
-  .detail-row .label { color: #8b949e; }
-  .detail-row .value { color: #e6edf3; font-weight: 600; }
-
-  .detail-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: auto;
-    padding-top: 16px;
-  }
-
-  .empty-msg { color: #8b949e; font-size: 0.9rem; text-align: center; padding: 20px; }
-</style>
 
 <div class="dashboard-wrap">
   <div class="dashboard-header">
@@ -186,8 +41,9 @@
   </div>
 
   <div class="split">
-    <!-- Left: list -->
-    <div class="song-list">
+    <!-- Left: song list -->
+    <div class="song-panel">
+      <div class="song-list" id="song-list">
       {% if songs %}
         {% for song in songs %}
           <div class="song-item" onclick="selectSong(this)"
@@ -209,6 +65,8 @@
       {% else %}
         <p class="empty-msg">No songs yet.</p>
       {% endif %}
+        <p class="no-results" id="no-results">No songs match your search.</p>
+      </div>
     </div>
 
     <!-- Right: detail -->
@@ -242,6 +100,68 @@
 </div>
 
 <script>
+  function populateFilters() {
+    const genres = new Set();
+    document.querySelectorAll('.song-item').forEach(el => {
+      const g = (el.dataset.genre || '').trim();
+      if (g) genres.add(g);
+    });
+    const sel = document.getElementById('genre-filter');
+    [...genres].sort().forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g; opt.textContent = g;
+      sel.appendChild(opt);
+    });
+  }
+
+  function applyFiltersAndSort() {
+    const query = document.getElementById('search-input').value.toLowerCase().trim();
+    const genre = document.getElementById('genre-filter').value.toLowerCase();
+    const sort  = document.getElementById('sort-select').value;
+    const list  = document.getElementById('song-list');
+    const items = [...list.querySelectorAll('.song-item')];
+
+    // Sort DOM nodes
+    items.sort((a, b) => {
+      if (sort === 'artist-asc')  return (a.dataset.artist || '').localeCompare(b.dataset.artist || '');
+      if (sort === 'artist-desc') return (b.dataset.artist || '').localeCompare(a.dataset.artist || '');
+      const ya = (a.dataset.date || '').slice(0, 4) || '0000';
+      const yb = (b.dataset.date || '').slice(0, 4) || '0000';
+      if (sort === 'year-asc')  return ya.localeCompare(yb);
+      if (sort === 'year-desc') return yb.localeCompare(ya);
+      return (a.dataset.originalIndex || 0) - (b.dataset.originalIndex || 0);
+    });
+    items.forEach(item => list.appendChild(item));
+
+    // Filter visibility
+    let visible = 0;
+    items.forEach(item => {
+      const matches =
+        (!query || [item.dataset.title, item.dataset.artist, item.dataset.album]
+          .some(f => (f || '').toLowerCase().includes(query))) &&
+        (!genre || (item.dataset.genre || '').toLowerCase() === genre);
+      item.style.display = matches ? '' : 'none';
+      if (matches) visible++;
+    });
+
+    const total = items.length;
+    document.getElementById('search-count').textContent =
+      (query || genre || sort) ? `${visible} / ${total}` : `${total}`;
+    document.getElementById('no-results').style.display =
+      visible === 0 && total > 0 ? '' : 'none';
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    populateFilters();
+    document.querySelectorAll('.song-item').forEach((el, i) => { el.dataset.originalIndex = i; });
+    const total = document.querySelectorAll('.song-item').length;
+    document.getElementById('search-count').textContent = total;
+    document.getElementById('search-input').addEventListener('input', applyFiltersAndSort);
+    ['genre-filter', 'sort-select'].forEach(id =>
+      document.getElementById(id).addEventListener('change', applyFiltersAndSort)
+    );
+  });
+
   function escAttr(s) {
     return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
   }

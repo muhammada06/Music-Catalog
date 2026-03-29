@@ -3,196 +3,9 @@
 <head>
   <meta charset="utf-8">
   <title>Music Catalog</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      min-height: 100vh;
-      background: #0d1117;
-      color: #e6edf3;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-    }
-
-    nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 48px;
-      border-bottom: 1px solid #21262d;
-      background: #161b22;
-    }
-
-    .nav-logo {
-      font-size: 1.2rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: #58a6ff;
-      text-decoration: none;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 12px;
-    }
-
-    .nav-links a, .nav-links button {
-      padding: 8px 18px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-      transition: background 0.15s;
-    }
-
-    .btn-ghost {
-      background: transparent;
-      color: #e6edf3;
-      border: 1px solid #30363d !important;
-    }
-    .btn-ghost:hover { background: #21262d; }
-
-    .btn-primary {
-      background: #238636;
-      color: white;
-    }
-    .btn-primary:hover { background: #2ea043; }
-
-    .btn-red {
-      background: #da3633;
-      color: white;
-    }
-    .btn-red:hover { background: #f85149; }
-
-    /* Hero */
-    .hero {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 80px 24px;
-      gap: 16px;
-    }
-
-    .hero-badge {
-      font-size: 0.8rem;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: #58a6ff;
-      background: rgba(88, 166, 255, 0.1);
-      border: 1px solid rgba(88, 166, 255, 0.3);
-      padding: 4px 14px;
-      border-radius: 20px;
-    }
-
-    .hero h1 {
-      font-size: clamp(2.5rem, 6vw, 4.5rem);
-      font-weight: 800;
-      line-height: 1.1;
-      color: #e6edf3;
-    }
-
-    .hero h1 span {
-      color: #58a6ff;
-    }
-
-    .hero p {
-      font-size: 1.1rem;
-      color: #8b949e;
-      max-width: 480px;
-      line-height: 1.6;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 8px;
-    }
-
-    .hero-actions a {
-      padding: 12px 28px;
-      border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: background 0.15s, transform 0.1s;
-    }
-
-    .hero-actions a:hover { transform: translateY(-1px); }
-
-    .divider {
-      width: 100%;
-      max-width: 600px;
-      border: none;
-      border-top: 1px solid #21262d;
-      margin: 12px 0;
-    }
-
-    .role-section {
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-top: 8px;
-    }
-
-    .role-card {
-      background: #161b22;
-      border: 1px solid #21262d;
-      border-radius: 12px;
-      padding: 24px 32px;
-      text-align: center;
-      width: 220px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .role-card .role-icon { font-size: 2rem; }
-    .role-card .role-title { font-weight: 700; font-size: 1rem; }
-    .role-card .role-desc { font-size: 0.82rem; color: #8b949e; line-height: 1.4; }
-
-    .role-card a {
-      margin-top: 6px;
-      padding: 8px 16px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: background 0.15s;
-    }
-
-    footer {
-      text-align: center;
-      padding: 20px;
-      font-size: 0.8rem;
-      color: #484f58;
-      border-top: 1px solid #21262d;
-    }
-
-    .flash-messages {
-      padding: 12px 48px 0;
-    }
-
-    .flash-msg {
-      padding: 10px 16px;
-      border-radius: 6px;
-      background: #1f2937;
-      border: 1px solid #30363d;
-      color: #e6edf3;
-      font-size: 0.9rem;
-      margin-bottom: 8px;
-    }
-  </style>
+  <link rel="stylesheet" href="/static/css/home.css">
 </head>
-<body>
+<body class="{% if not current_user.is_authenticated %}guest{% endif %}">
 
   <nav>
     <a class="nav-logo" href="/" style="display:flex; align-items:center; gap:8px;">
@@ -200,8 +13,13 @@
       <span style="color:#e53935;">Music</span><span style="color:#4caf50;"> Catalog</span>
     </a>
     <div class="nav-links">
-      {% if not current_user.is_authenticated %}
-        <a href="{{ url_for('auth.login') }}" class="btn-ghost">Login</a>
+      {% if current_user.is_authenticated %}
+        {% if current_user.is_admin %}
+          <a href="{{ url_for('admin.dashboard') }}" class="btn-ghost">Dashboard</a>
+        {% else %}
+          <a href="{{ url_for('user.dashboard') }}" class="btn-ghost">Dashboard</a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}" class="btn-ghost">Logout</a>
       {% endif %}
     </div>
   </nav>
@@ -214,49 +32,137 @@
     </div>
   {% endif %}
 
-  <main class="hero">
-    <div class="hero-badge">Music Catalog</div>
+  <main class="{% if current_user.is_authenticated %}home-full{% else %}home-split{% endif %}">
 
-    {% if current_user.is_authenticated %}
-      <h1>Welcome back,<br><span>{{ current_user.username }}</span></h1>
-      <p>Pick up where you left off.</p>
-      <div class="hero-actions">
-        {% if current_user.is_admin %}
-          <a href="{{ url_for('admin.dashboard') }}" style="background:#238636; color:white;">Go to Dashboard</a>
+    <!-- Catalog preview — shown to everyone -->
+    <div class="preview-panel {% if current_user.is_authenticated %}preview-panel--full{% endif %}">
+
+      <div class="preview-header">
+        <div class="preview-eyebrow">
+          <span class="hero-badge">{% if current_user.is_authenticated %}Welcome back{% else %}Live Catalog{% endif %}</span>
+          {% if total_songs > 0 %}
+            <span class="song-count-badge">{{ total_songs }} song{% if total_songs != 1 %}s{% endif %}</span>
+          {% endif %}
+        </div>
+        {% if current_user.is_authenticated %}
+          <h2>Hey, {{ current_user.username }} 👋</h2>
+          <p>Here's a preview of the catalog. Head to your dashboard to stream.</p>
+          <div class="header-actions">
+            {% if current_user.is_admin %}
+              <a href="{{ url_for('admin.dashboard') }}" class="header-btn header-btn-green">Go to Dashboard</a>
+            {% else %}
+              <a href="{{ url_for('user.dashboard') }}" class="header-btn header-btn-blue">Browse &amp; Stream</a>
+            {% endif %}
+          </div>
         {% else %}
-          <a href="{{ url_for('user.dashboard') }}" style="background:#1f6feb; color:white;">Browse Music</a>
+          <h2>Discover the Music</h2>
+          <p>Browse what's in the catalog. Sign in to stream full tracks.</p>
         {% endif %}
-        <a href="{{ url_for('auth.logout') }}" style="background:#21262d; color:#e6edf3; border:1px solid #30363d;">Logout</a>
       </div>
 
-    {% else %}
-      <h1>Your music,<br><span>all in one place.</span></h1>
-      <p>Discover, catalog, and stream music. Built for artists and listeners alike.</p>
-
-      <div class="hero-actions">
-        <a href="{{ url_for('auth.login') }}" style="background:#1f6feb; color:white;">Sign In</a>
-      </div>
-
-      <hr class="divider">
-
-      <div class="role-section">
-        <div class="role-card">
-          <div class="role-icon">🎤</div>
-          <div class="role-title">Artist / Label</div>
-          <div class="role-desc">Upload and manage your catalog, add songs and demos.</div>
-          <a href="{{ url_for('admin.get') }}" style="background:#da3633; color:white;">Create Admin Account</a>
+      {% macro song_card(song) %}
+        <div class="song-card">
+          <div class="song-card-cover">
+            {% if song.album_cover %}
+              {% if song.album_cover.startswith('http') %}
+                <img src="{{ song.album_cover }}" alt="{{ song.title }}">
+              {% else %}
+                <img src="{{ url_for('admin.serve_cover', filename=song.album_cover) }}" alt="{{ song.title }}">
+              {% endif %}
+            {% else %}
+              <div class="cover-placeholder">🎵</div>
+            {% endif %}
+            {% if not current_user.is_authenticated %}
+              <div class="song-card-overlay">🔒 Sign in to play</div>
+            {% endif %}
+          </div>
+          <div class="song-card-info">
+            <div class="song-card-title">{{ song.title }}</div>
+            <div class="song-card-artist">{{ song.artist }}</div>
+          </div>
         </div>
-        <div class="role-card">
-          <div class="role-icon">🎧</div>
-          <div class="role-title">Listener</div>
-          <div class="role-desc">Browse the full catalog and stream available tracks.</div>
-          <a href="{{ url_for('user.get') }}" style="background:#238636; color:white;">Create User Account</a>
+      {% endmacro %}
+
+      {% if new_releases or genre_sections or shuffle %}
+
+        {% if new_releases %}
+        <div class="catalog-section">
+          <div class="section-header">
+            <h3 class="section-title">🆕 New Releases</h3>
+          </div>
+          <div class="section-row">
+            {% for song in new_releases %}{{ song_card(song) }}{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        {% for section in genre_sections %}
+        <div class="catalog-section">
+          <div class="section-header">
+            <h3 class="section-title">{{ section.name | title }}</h3>
+          </div>
+          <div class="section-row">
+            {% for song in section.songs %}{{ song_card(song) }}{% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+
+        {% if shuffle %}
+        <div class="catalog-section">
+          <div class="section-header">
+            <h3 class="section-title">🎲 Discover</h3>
+          </div>
+          <div class="section-row">
+            {% for song in shuffle %}{{ song_card(song) }}{% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+      {% else %}
+        <div class="preview-empty">
+          <div style="font-size:3rem; margin-bottom:12px;">🎵</div>
+          No songs added yet. Check back soon.
+        </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Right: sign in panel — guests only -->
+    {% if not current_user.is_authenticated %}
+    <div class="auth-side">
+      <div class="auth-side-inner">
+        <div class="auth-side-top">
+          <h1>Sign In</h1>
+          <p class="subtitle">Stream the full catalog and save your favourites.</p>
+        </div>
+
+        <form action="{{ url_for('auth.login') }}" method="POST">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required placeholder="Enter your username">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="Enter your password">
+          </div>
+          <button type="submit" class="submit-btn">Sign In</button>
+        </form>
+
+        <div class="auth-side-links">
+          <a href="{{ url_for('auth.getForgot') }}" class="forgot-link">Forgot your password?</a>
+          <div class="auth-divider"><span>New here?</span></div>
+          <a href="{{ url_for('user.get') }}" class="create-btn create-btn-green">🎧 Create Listener Account</a>
+          <a href="{{ url_for('admin.get') }}" class="create-btn create-btn-red">🎤 Create Artist Account</a>
         </div>
       </div>
+    </div>
     {% endif %}
+
   </main>
 
-  <footer>&copy; 2026 Group Project. All rights reserved.</footer>
+  {% if current_user.is_authenticated %}
+    <footer>&copy; 2026 Group Project. All rights reserved.</footer>
+  {% endif %}
 
 </body>
 </html>

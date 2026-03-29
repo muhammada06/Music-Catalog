@@ -2,93 +2,11 @@
 
 {% block title %}Add Song{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/songs.css') }}">
+{% endblock %}
+
 {% block content %}
-<style>
-  .page {
-    min-height: calc(100vh - 62px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 16px;
-    background: #0d1117;
-  }
-
-  .card {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 12px;
-    padding: 36px 40px;
-    width: 100%;
-    max-width: 480px;
-  }
-
-  .card h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #e6edf3;
-    margin-bottom: 24px;
-  }
-
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 16px;
-  }
-
-  .form-group label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #c9d1d9;
-  }
-
-  .form-group input[type="text"],
-  .form-group input[type="date"] {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    border-radius: 6px;
-    padding: 10px 14px;
-    font-size: 0.95rem;
-    color: #e6edf3;
-    outline: none;
-    transition: border-color 0.15s;
-    width: 100%;
-  }
-
-  .form-group input:focus { border-color: #58a6ff; }
-
-  .form-group input[type="file"] {
-    font-size: 0.85rem;
-    color: #8b949e;
-  }
-
-  .submit-btn {
-    width: 100%;
-    padding: 11px;
-    background: #238636;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: background 0.15s;
-  }
-
-  .submit-btn:hover { background: #2ea043; }
-
-  .back-link {
-    display: block;
-    text-align: center;
-    margin-top: 16px;
-    font-size: 0.85rem;
-    color: #58a6ff;
-    text-decoration: none;
-  }
-
-  .back-link:hover { text-decoration: underline; }
-</style>
 
 <div class="page">
   <div class="card">

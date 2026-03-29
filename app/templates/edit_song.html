@@ -2,62 +2,91 @@
 
 {% block title %}Edit Song{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/songs.css') }}">
+{% endblock %}
+
 {% block content %}
-<h1>Edit Song </h1>
+<div class="page">
+  <div class="card">
+    <h1>Edit Song</h1>
 
-<form method="POST" enctype="multipart/form-data">
-  <label>Title:</label><br>
-  <input type="text" name="title" value="{{ song.title }}" required><br><br>
-
-  <label>Artist:</label><br>
-  <input type="text" name="artist" value="{{ song.artist }}" required><br><br>
-
-  <label>Album:</label><br>
-  <input type="text" name="album" value="{{ song.album }}"><br><br>
-
-  <label>Genre:</label><br>
-  <input type="text" name="genre" value="{{ song.genre }}"><br><br>
-
-  <label>Release Date:</label><br>
-  <input type="date" name="release_date" value="{{ song.release_date }}"><br><br>
-
-  <label>Demo Song:</label><br>
-  <input type="file" name="audio" value="{{ song.audio_file }}"><br><br>
-
-  <label>Album Cover:</label><br>
-  {% if song.album_cover %}
-    <img src="{{ song.album_cover if song.album_cover.startswith('http') else url_for('admin.serve_cover', filename=song.album_cover) }}" style="height:80px; border-radius:6px; margin-bottom:6px; display:block;">
-  {% endif %}
-  <input type="file" name="album_cover" accept="image/*"><br><br>
-
-  <label>Online Sources:</label><br>
-  <div id="sources-container">
-    {% if song.online_source %}
-      {% for url in song.online_source.split(',') %}
-        <div class="source-row" style="display:flex; gap:8px; margin-bottom:6px;">
-          <input type="text" name="online_sources" class="source-input" value="{{ url.strip() }}" placeholder="https://..." style="flex:1; background:#0d1117; border:1px solid #30363d; border-radius:6px; padding:8px 12px; color:#e6edf3; font-size:0.9rem;">
-          <button type="button" onclick="removeSource(this)" style="background:#da3633; color:white; border:none; border-radius:6px; padding:8px 12px; cursor:pointer;">✕</button>
-        </div>
-      {% endfor %}
-    {% else %}
-      <div class="source-row" style="display:flex; gap:8px; margin-bottom:6px;">
-        <input type="text" name="online_sources" class="source-input" placeholder="https://..." style="flex:1; background:#0d1117; border:1px solid #30363d; border-radius:6px; padding:8px 12px; color:#e6edf3; font-size:0.9rem;">
-        <button type="button" onclick="removeSource(this)" style="background:#da3633; color:white; border:none; border-radius:6px; padding:8px 12px; cursor:pointer;">✕</button>
+    <form method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Title</label>
+        <input type="text" name="title" value="{{ song.title }}" required>
       </div>
-    {% endif %}
-  </div>
-  <button type="button" onclick="addSource()" style="background:#21262d; color:#e6edf3; border:1px solid #30363d; border-radius:6px; padding:7px 14px; cursor:pointer; margin-bottom:16px; font-size:0.85rem;">+ Add Source</button><br><br>
 
-  <button type="submit">Save Changes</button>
-</form>
+      <div class="form-group">
+        <label>Artist</label>
+        <input type="text" name="artist" value="{{ song.artist }}" required>
+      </div>
+
+      <div class="form-group">
+        <label>Album</label>
+        <input type="text" name="album" value="{{ song.album }}">
+      </div>
+
+      <div class="form-group">
+        <label>Genre</label>
+        <input type="text" name="genre" value="{{ song.genre }}">
+      </div>
+
+      <div class="form-group">
+        <label>Release Date</label>
+        <input type="date" name="release_date" value="{{ song.release_date }}">
+      </div>
+
+      <div class="form-group">
+        <label>Demo Song</label>
+        <input type="file" name="audio" value="{{ song.audio_file }}">
+      </div>
+
+      <div class="form-group">
+        <label>Album Cover</label>
+        {% if song.album_cover %}
+          <img src="{{ song.album_cover if song.album_cover.startswith('http') else url_for('admin.serve_cover', filename=song.album_cover) }}" class="cover-preview">
+        {% endif %}
+        <input type="file" name="album_cover" accept="image/*">
+      </div>
+
+      <div class="form-group">
+        <label>Online Sources</label>
+        <div id="sources-container">
+          {% if song.online_source %}
+            {% for url in song.online_source.split(',') %}
+              <div class="source-row">
+                <input type="text" name="online_sources" class="source-input" value="{{ url.strip() }}" placeholder="https://...">
+                <button type="button" class="source-remove-btn" onclick="removeSource(this)">✕</button>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="source-row">
+              <input type="text" name="online_sources" class="source-input" placeholder="https://...">
+              <button type="button" class="source-remove-btn" onclick="removeSource(this)">✕</button>
+            </div>
+          {% endif %}
+        </div>
+        <button type="button" class="source-add-btn" onclick="addSource()">+ Add Source</button>
+      </div>
+
+      <button type="submit" class="submit-btn">Save Changes</button>
+    </form>
+
+    <form method="POST" action="{{ url_for('admin.removeDemo', song_id=song.id) }}" class="remove-demo-form">
+      <button type="submit" class="back-link">Remove the demo song</button>
+    </form>
+
+    <a class="back-link" href="{{ url_for('admin.dashboard') }}">← Back to Dashboard</a>
+  </div>
+</div>
 
 <script>
   function addSource() {
     const row = document.createElement('div');
     row.className = 'source-row';
-    row.style = 'display:flex; gap:8px; margin-bottom:6px;';
-    row.innerHTML = '<input type="text" name="online_sources" class="source-input" placeholder="https://..." style="flex:1; background:#0d1117; border:1px solid #30363d; border-radius:6px; padding:8px 12px; color:#e6edf3; font-size:0.9rem;">'
-      + '<button type="button" onclick="removeSource(this)" style="background:#da3633; color:white; border:none; border-radius:6px; padding:8px 12px; cursor:pointer;">✕</button>';
+    row.innerHTML = '<input type="text" name="online_sources" class="source-input" placeholder="https://...">'
+      + '<button type="button" class="source-remove-btn" onclick="removeSource(this)">✕</button>';
     document.getElementById('sources-container').appendChild(row);
   }
 
@@ -67,9 +96,4 @@
     else btn.previousElementSibling.value = '';
   }
 </script>
-
-<form method="POST" action="{{ url_for('admin.removeDemo', song_id=song.id) }}" style="display:inline;">
-  <button type="submit" class="button">Remove the demo song!</button>
-</form>
-
 {% endblock %}

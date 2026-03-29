@@ -3,55 +3,8 @@
 <head>
   <meta charset="utf-8">
   <title>{% block title %}Music Catalog{% endblock %}</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      background: #0d1117;
-      color: #e6edf3;
-      font-family: 'Segoe UI', Arial, sans-serif;
-    }
-
-    .base-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 18px 48px;
-      background: #161b22;
-      border-bottom: 1px solid #21262d;
-    }
-
-    .base-nav .nav-logo {
-      font-size: 1.2rem;
-      font-weight: 700;
-      color: #58a6ff;
-      text-decoration: none;
-      letter-spacing: 1px;
-    }
-
-    .base-nav .nav-links {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-    }
-
-    .base-nav .nav-links a, .base-nav button {
-      padding: 8px 18px;
-      border-radius: 6px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-decoration: none;
-      cursor: pointer;
-      border: 1px solid #30363d;
-      background: transparent;
-      color: #e6edf3;
-      transition: background 0.15s;
-    }
-
-    .base-nav .nav-links a:hover, .base-nav button:hover { background: #21262d; }
-
-    main { background: transparent; }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_css %}{% endblock %}
 </head>
 <body>
   <nav class="base-nav">
@@ -59,6 +12,7 @@
       <img src="/static/watermelon.png" style="height:28px; width:28px; object-fit:contain;">
       <span style="color:#e53935;">Music</span><span style="color:#4caf50;"> Catalog</span>
     </a>
+    {% block nav_center %}{% endblock %}
     <div class="nav-links">
       {% if current_user.is_authenticated %}
         {% if request.endpoint not in ('admin.dashboard', 'user.dashboard') %}

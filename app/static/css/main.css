@@ -1,0 +1,108 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+
+.base-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 48px;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+}
+
+.base-nav .nav-logo {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #58a6ff;
+  text-decoration: none;
+  letter-spacing: 1px;
+}
+
+.base-nav .nav-links {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.base-nav .nav-links a, .base-nav button {
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid #30363d;
+  background: transparent;
+  color: #e6edf3;
+  transition: background 0.15s;
+}
+
+.base-nav .nav-links a:hover, .base-nav button:hover { background: #21262d; }
+
+main { background: transparent; }
+
+/* ── Nav search bar (dashboard pages) ── */
+.nav-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 580px;
+  margin: 0 32px;
+}
+
+.nav-search-input {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-search-input svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #484f58;
+  pointer-events: none;
+}
+
+.nav-search-input input {
+  width: 100%;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 7px 12px 7px 32px;
+  font-size: 0.85rem;
+  color: #e6edf3;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.nav-search-input input:focus { border-color: #58a6ff; }
+.nav-search-input input::placeholder { color: #484f58; }
+
+.nav-filter-select {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  color: #8b949e;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  max-width: 140px;
+}
+.nav-filter-select:focus { border-color: #58a6ff; }
+
+.nav-search-count {
+  font-size: 0.75rem;
+  color: #484f58;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
