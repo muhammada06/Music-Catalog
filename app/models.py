@@ -15,6 +15,8 @@ class User(UserMixin, db.Model):
         self.username = plain_user_name
 
     def set_password(self, plain_user_password):
+        if not plain_user_password:
+            raise ValueError("Password cannot be empty")
         self.password = generate_password_hash(plain_user_password)
 
     def set_email(self, plain_user_email):

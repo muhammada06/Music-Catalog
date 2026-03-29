@@ -1,3 +1,5 @@
+import pytest
+
 from app.models import User
 
 def test_set_password():
@@ -33,6 +35,6 @@ def test_same_password():
 
 def test_empty_password():
     user = User(username="testUser")
-    user.set_password("")
-    assert user.check_password("") == True
-    assert user.check_password("myPassword") == False
+
+    with pytest.raises(ValueError):
+        user.set_password(None)
