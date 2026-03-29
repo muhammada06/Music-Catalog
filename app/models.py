@@ -25,6 +25,20 @@ class User(UserMixin, db.Model):
     def check_password(self, plain_user_password):
         return check_password_hash(self.password, plain_user_password)
     
+class Playlist(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    __table_args__ = (db.UniqueConstraint('user_id', 'name'),)
+
+class linkPlaylistSong(db.Model):
+    playlist_id = db.Column(db.Integer, db.ForeignKey('playlist.id'), primary_key=True)
+    song_id = db.Column(db.Integer, db.ForeignKey('song.id'), primary_key=True)
+
+    playlist = db.relationship('Playlist', backref='songs')
+    song = db.relationship('Song', backref='playlists')
+    
 class Song(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
