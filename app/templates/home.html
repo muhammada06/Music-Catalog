@@ -14,11 +14,6 @@
     </a>
     <div class="nav-links">
       {% if current_user.is_authenticated %}
-        {% if current_user.is_admin %}
-          <a href="{{ url_for('admin.dashboard') }}" class="btn-ghost">Dashboard</a>
-        {% else %}
-          <a href="{{ url_for('user.dashboard') }}" class="btn-ghost">Dashboard</a>
-        {% endif %}
         <a href="{{ url_for('auth.logout') }}" class="btn-ghost">Logout</a>
       {% endif %}
     </div>
@@ -40,9 +35,6 @@
       <div class="preview-header">
         <div class="preview-eyebrow">
           <span class="hero-badge">{% if current_user.is_authenticated %}Welcome back{% else %}Live Catalog{% endif %}</span>
-          {% if total_songs > 0 %}
-            <span class="song-count-badge">{{ total_songs }} song{% if total_songs != 1 %}s{% endif %}</span>
-          {% endif %}
         </div>
         {% if current_user.is_authenticated %}
           <h2>Hey, {{ current_user.username }} 👋</h2>
@@ -96,17 +88,6 @@
         </div>
         {% endif %}
 
-        {% for section in genre_sections %}
-        <div class="catalog-section">
-          <div class="section-header">
-            <h3 class="section-title">{{ section.name | title }}</h3>
-          </div>
-          <div class="section-row">
-            {% for song in section.songs %}{{ song_card(song) }}{% endfor %}
-          </div>
-        </div>
-        {% endfor %}
-
         {% if shuffle %}
         <div class="catalog-section">
           <div class="section-header">
@@ -117,6 +98,17 @@
           </div>
         </div>
         {% endif %}
+
+        {% for section in genre_sections %}
+        <div class="catalog-section">
+          <div class="section-header">
+            <h3 class="section-title">{{ section.name | title }}</h3>
+          </div>
+          <div class="section-row">
+            {% for song in section.songs %}{{ song_card(song) }}{% endfor %}
+          </div>
+        </div>
+        {% endfor %}
 
       {% else %}
         <div class="preview-empty">
@@ -161,7 +153,7 @@
   </main>
 
   {% if current_user.is_authenticated %}
-    <footer>&copy; 2026 Group Project. All rights reserved.</footer>
+    <footer>&copy; 2026 WaterMelon. All rights reserved.</footer>
   {% endif %}
 
 </body>
