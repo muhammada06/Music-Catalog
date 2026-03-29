@@ -39,7 +39,9 @@ def creation():
 def dashboard():
     # Show all songs in the database for user-side view (read-only)
     songs = Song.query.all()
-    return render_template("user_dashboard.html", songs=songs)
+    playlists = current_user.playlists
+    playlists_data = [{'id': p.id, 'name': p.name} for p in playlists]
+    return render_template("user_dashboard.html", songs=songs, playlists=playlists_data)
 
 @user.route('/add_to_playlist/<int:song_id>', methods=["POST"])
 @login_required

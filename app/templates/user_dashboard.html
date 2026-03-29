@@ -72,6 +72,10 @@
 </div>
 
 <script>
+  const USER_PLAYLISTS = JSON.parse('{{ playlists | tojson | safe }}');
+</script>
+
+<script>
   function escAttr(s) {
     return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
   }
@@ -160,6 +164,7 @@
       if (el) { el.scrollIntoView({ block: 'nearest' }); selectSong(el); }
     }
   });
+  
 
   function selectSong(el) {
     document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'));
@@ -174,6 +179,7 @@
     const cover  = el.dataset.cover;
     const online = JSON.parse(el.dataset.online || '""');
     const id     = el.dataset.id;
+    const playlists = USER_PLAYLISTS;
 
     const coverHtml = cover
       ? `<img class="detail-cover" src="${cover}" alt="Album Cover">`
@@ -182,6 +188,18 @@
     const audioHtml = audio
       ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
       : '';
+
+    const playlistSelectHtml = `
+      <div class="detail-row" style="display:flex; align-items:center; gap:8px;">
+        <span class="label" style="margin-right:8px;">Add to Playlist</span>
+        <select id="playlist-select" class="nav-filter-select">
+          <option value="">Select Playlist</option>
+          <option value="NEW">NEW</option>
+          ${playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+        <button id="add-to-playlist" class="btn">Add</button>
+      </div>
+    `;
 
     document.getElementById('detail-panel').innerHTML = `
       ${coverHtml}
@@ -192,9 +210,30 @@
         ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
         ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
         ${renderSources(online) ? `<div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">${renderSources(online)}</span></div>` : ''}
+        ${playlistSelectHtml}
       </div>
       ${audioHtml}
     `;
+
+    document.getElementById('add-to-playlist').addEventListener('click', () => {
+      const select = document.getElementById('playlist-select');
+      const playlist_id = select.value;
+
+      if (!playlist_id) return alert("Select a playlist!");
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/user/add_to_playlist/${id}`;
+  
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'playlist_id';
+      input.value = playlist_id;
+      form.appendChild(input);
+
+      document.body.appendChild(form);
+      form.submit();
+    });
   }
 </script>
 {% endblock %}
