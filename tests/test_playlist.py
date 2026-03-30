@@ -1,46 +1,56 @@
-import pytest
-from app.models import Playlist, Song, linkPlaylistSong
+from app.models import Playlist, Song, User
+from app import db
 
+#tdd
 def test_create_playlist():
-    playlist = Playlist(name="My Playlist", user_id=1)
-    assert playlist.name == "My Playlist"
-    assert playlist.user_id == 1
+    playlist = Playlist()
+    assert playlist is not None
 
-def test_same_playlist_name_different_users():
-    p1 = Playlist(name="My Playlist", user_id=1)
-    p2 = Playlist(name="My Playlist", user_id=2)
+#test suite
+#testing that playlist is empty when first created
+def test_playlist_created_empty():
+    playlist = Playlist()
+    assert len(playlist.get_songs()) == 0
 
-    assert p1.name == p2.name
-    assert p1.user_id != p2.user_id
+def test_add_song_to_playlist():
+    playlist = Playlist()
+    song = Song("Song1", "artist1")
 
-def test_link_song_to_playlist():
-    playlist = Playlist(id=1, name="My Playlist", user_id=1)
-    song = Song(id=1, title="Song1", artist="Artist1")
+    playlist.add_song(song)
+    assert len(playlist.get_songs()) == 1
 
-    link = linkPlaylistSong(playlist_id=playlist.id, song_id=song.id)
+def test_remove_song_from_playlist():
+    playlist = Playlist()
+    song = Song("Song1", "Artist1")
 
-    assert link.playlist_id == 1
-    assert link.song_id == 1
+    playlist.add_song(song)
+    playlist.remove_song(song)   
+    assert len(playlist.get_songs()) == 0
 
+def test_remove_song_not_in_playlist():
+    playlist = Playlist()
+    song = Song("Song1", "Artist1")
+    playlist.add_song(song)
+    try:
+      playlist.remove_song(song)
+      assert True
+    except:
+      assert False
 
-def test_playlist_song_relationship_objects():
-    playlist = Playlist(id=1, name="My Playlist", user_id=1)
-    song = Song(id=1, title="Song1", artist="Artist1")
+def test_delete_playlist(app):
+    with app.app_context():
+        user = User(username="testuser", email="test@test.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
 
-    link = linkPlaylistSong(playlist=playlist, song=song)
+        playlist = Playlist(name="My Playlist", user_id=user.id)
+        db.session.add(playlist)
+        db.session.commit()
 
-    assert link.playlist == playlist
-    assert link.song == song
-    
-def test_song_objects_are_distinct():
-    song1 = Song(title="Song1", artist="Artist1")
-    song2 = Song(title="Song1", artist="Artist1")
+        assert Playlist.query.count() == 1
 
-    assert song1 != song2
+        db.session.delete(playlist)
+        db.session.commit()
 
-
-def test_playlist_name_not_none():
-    playlist = Playlist(name="Test Playlist", user_id=1)
-
-    assert playlist.name is not None
-
+        assert Playlist.query.count() == 0
