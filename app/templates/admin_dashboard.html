@@ -203,27 +203,36 @@
     const online  = JSON.parse(el.dataset.online || '""');
     const editUrl = el.dataset.edit;
     const delUrl  = el.dataset.delete;
+    const id      = el.dataset.id;
 
     const coverHtml = cover
-      ? `<img class="detail-cover" src="${cover}" alt="Album Cover">`
-      : `<div class="detail-cover-placeholder">🎵</div>`;
+      ? `<div class="cover-area" id="cover-area"><img src="${cover}" alt="Album Cover" style="width:280px;height:280px;border-radius:12px;object-fit:cover;display:block;"></div>`
+      : `<div class="cover-area" id="cover-area"><div class="detail-cover-placeholder">🎵</div></div>`;
 
     const audioHtml = audio
-      ? `<audio controls style="width:100%; margin-bottom:12px;"><source src="/user/play/${el.dataset.id}" type="audio/mpeg"></audio>`
+      ? `<audio controls style="width:100%; margin-bottom:12px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
       : '';
+
+    const previewButton = `
+      <button id="play-preview" style="display:block;margin:0 auto 16px;padding:8px 24px;background:#1f6feb;color:white;border:none;border-radius:6px;font-size:0.88rem;font-weight:600;cursor:pointer;">
+        ▶ Load Preview
+      </button>
+      <div id="preview-container"></div>
+    `;
+
 
     document.getElementById('detail-panel').innerHTML = `
       ${coverHtml}
       <div class="detail-title">${title}</div>
       <div class="detail-artist">${artist}</div>
+      ${previewButton}
       <div class="detail-info">
         <div class="detail-row"><span class="label">Album</span><span class="value">${album || '—'}</span></div>
         <div class="detail-row"><span class="label">Genre</span><span class="value">${genre || '—'}</span></div>
         <div class="detail-row"><span class="label">Released</span><span class="value">${date || '—'}</span></div>
         <div class="detail-row"><span class="label">Audio File</span><span class="value">${audio || '—'}</span></div>
         <div class="detail-row"><span class="label">Album Cover</span><span class="value">${cover ? 'Uploaded' : '—'}</span></div>
-        <div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">${renderSources(online) || '—'}</span>
-</div>
+        <div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${renderSources(online) || '—'}</span></div>
       </div>
       ${audioHtml}
       <div class="detail-actions">
@@ -233,6 +242,41 @@
         </form>
       </div>
     `;
+
+    document.getElementById('play-preview').addEventListener('click', async () => {
+      const container = document.getElementById('preview-container');
+      if (container.dataset.loaded === 'true') return;
+
+      try {
+        const res = await fetch(`/user/preview/${id}`);
+        const data = await res.json();
+        const deezerId = data.deezer_id;
+
+        if (deezerId) {
+          // swap cover for widget
+          document.getElementById('cover-area').innerHTML = `
+            <iframe
+              title="deezer-widget"
+              src="https://widget.deezer.com/widget/dark/track/${deezerId}"
+              width="280"
+              height="280"
+              frameborder="0"
+              allowtransparency="true"
+              allow="encrypted-media; clipboard-write"
+              style="border-radius:12px; display:block; margin: 0 auto;">
+            </iframe>
+          `;
+          document.getElementById('play-preview').style.display = 'none';
+          container.dataset.loaded = 'true';
+        } else {
+          alert("No preview available for this song.");
+        }
+      } catch (err) {
+        console.error("Fetch error:", err);
+        alert("Error loading preview.");
+      }
+    });
   }
+
 </script>
 {% endblock %}
