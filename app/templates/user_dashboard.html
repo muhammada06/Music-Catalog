@@ -199,8 +199,8 @@
     const playlists = USER_PLAYLISTS;
 
     const coverHtml = cover
-      ? `<img class="detail-cover" src="${cover}" alt="Album Cover">`
-      : `<div class="detail-cover-placeholder">🎵</div>`;
+      ? `<div class="cover-area" id="cover-area"><img src="${cover}" alt="Album Cover"></div>`
+      : `<div class="cover-area" id="cover-area"><div class="detail-cover-placeholder">🎵</div></div>`;
 
     const audioHtml = audio
       ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
@@ -227,6 +227,7 @@
       ${coverHtml}
       <div class="detail-title">${title}</div>
       <div class="detail-artist">${artist}</div>
+      ${previewButton}
       <div class="detail-info">
         ${album ? `<div class="detail-row"><span class="label">Album</span><span class="value">${album}</span></div>` : ''}
         ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
@@ -234,7 +235,7 @@
         ${renderSources(online) ? `<div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">${renderSources(online)}</span></div>` : ''}
         ${playlistSelectHtml}
       </div>
-      ${previewButton || spotifyHtml || audioHtml}
+      ${spotifyHtml || audioHtml}
     `;
 
     const storedPreview = JSON.parse(el.dataset.preview || '""');
@@ -244,33 +245,37 @@
       if (container.dataset.loaded === 'true') return;
 
       try {
-          let deezerId = null;
+        const res = await fetch(`/user/preview/${id}`);
+        const data = await res.json();
+        const deezerId = data.deezer_id;
 
-          //if preview already stored, fetch deezer_id without re-querying Deezer
-          const res = await fetch(`/user/preview/${id}`);
-          const data = await res.json();
-          deezerId = data.deezer_id;
-
-          if (deezerId) {
-            container.innerHTML = `
+        if (deezerId) {
+          //replace cover area with Deezer widget
+          const coverArea = document.getElementById('cover-area');
+          coverArea.innerHTML = `
+            <div class="deezer-widget-area">
               <iframe
                 title="deezer-widget"
                 src="https://widget.deezer.com/widget/dark/track/${deezerId}"
                 width="100%"
-                height="92"
+                height="280"
                 frameborder="0"
                 allowtransparency="true"
                 allow="encrypted-media; clipboard-write">
               </iframe>
-            `;
-            container.dataset.loaded = 'true';
-            } else {
-                alert("No preview available for this song.");
-            }
-        } catch (err) {
-            console.error("Fetch error:", err);
-            alert("Error loading preview.");
+            </div>
+          `;
+
+          //hide play button
+          document.getElementById('play-preview').style.display = 'none';
+          container.dataset.loaded = 'true';
+        } else {
+          alert("No preview available for this song.");
         }
+      } catch (err) {
+        console.error("Fetch error:", err);
+        alert("Error loading preview.");
+      }
     });
 
     document.getElementById('add-to-playlist').addEventListener('click', () => {

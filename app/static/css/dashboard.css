@@ -107,7 +107,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   overflow-y: auto;
 }
 
@@ -116,6 +116,29 @@
   color: #484f58;
   font-size: 0.95rem;
   text-align: center;
+}
+
+.cover-area {
+  width: 280px;
+  margin: 0 auto 20px;
+  position: relative;
+}
+
+.cover-area img,
+.cover-area .detail-cover-placeholder {
+  width: 280px;
+  height: 280px;
+  border-radius: 12px;
+  object-fit: cover;
+  display: block;
+  background: #21262d;
+  transition: opacity 0.2s;
+}
+
+.deezer-widget-area {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .detail-cover {
