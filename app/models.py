@@ -52,6 +52,8 @@ class Song(db.Model):
     audio_file = db.Column(db.String(255))
     album_cover = db.Column(db.String(255))
     online_source = db.Column(db.String(500))
+    deezer_track_id = db.Column(db.Integer, nullable=True)
+    preview_url = db.Column(db.String(500), nullable=True) 
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     
 @login_manager.user_loader

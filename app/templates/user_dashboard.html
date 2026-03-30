@@ -49,7 +49,8 @@
             data-date="{{ song.release_date or '' }}"
             data-audio="{{ song.audio_file or '' }}"
             data-cover="{{ song.album_cover if song.album_cover and song.album_cover.startswith('http') else (url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '') }}"
-            data-online='{{ (song.online_source or "") | tojson }}'>
+            data-online='{{ (song.online_source or "") | tojson }}'
+            data-preview='{{ (song.preview_url or "") | tojson }}'>
             <div class="s-title">{{ song.title }}</div>
             <div class="s-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}</div>
           </div>
@@ -178,6 +179,22 @@
     const audio  = el.dataset.audio;
     const cover  = el.dataset.cover;
     const online = JSON.parse(el.dataset.online || '""');
+    const preview = JSON.parse(el.dataset.preview || '""');
+
+    let spotifyHtml = '';
+    if (online && online.includes("spotify.com/track/")) {
+      const trackId = online.split('/track/')[1].split('?')[0];
+
+      spotifyHtml = `
+        <iframe style="border-radius:12px; margin-top:10px;"
+          src="https://open.spotify.com/embed/track/${trackId}"
+          width="100%" height="100"
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+        </iframe>
+      `;
+    }
+
     const id     = el.dataset.id;
     const playlists = USER_PLAYLISTS;
 
@@ -188,6 +205,11 @@
     const audioHtml = audio
       ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
       : '';
+
+    const previewButton = `
+      <button id="play-preview" style="margin-top:10px;">▶ Load Preview</button>
+      <div id="preview-container" style="margin-top:10px;"></div>
+    `;
 
     const playlistSelectHtml = `
       <div class="detail-row" style="display:flex; align-items:center; gap:8px;">
@@ -212,8 +234,44 @@
         ${renderSources(online) ? `<div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex; align-items:center; flex-wrap:wrap; gap:4px;">${renderSources(online)}</span></div>` : ''}
         ${playlistSelectHtml}
       </div>
-      ${audioHtml}
+      ${previewButton || spotifyHtml || audioHtml}
     `;
+
+    const storedPreview = JSON.parse(el.dataset.preview || '""');
+
+    document.getElementById('play-preview').addEventListener('click', async () => {
+      const container = document.getElementById('preview-container');
+      if (container.dataset.loaded === 'true') return;
+
+      try {
+          let deezerId = null;
+
+          //if preview already stored, fetch deezer_id without re-querying Deezer
+          const res = await fetch(`/user/preview/${id}`);
+          const data = await res.json();
+          deezerId = data.deezer_id;
+
+          if (deezerId) {
+            container.innerHTML = `
+              <iframe
+                title="deezer-widget"
+                src="https://widget.deezer.com/widget/dark/track/${deezerId}"
+                width="100%"
+                height="92"
+                frameborder="0"
+                allowtransparency="true"
+                allow="encrypted-media; clipboard-write">
+              </iframe>
+            `;
+            container.dataset.loaded = 'true';
+            } else {
+                alert("No preview available for this song.");
+            }
+        } catch (err) {
+            console.error("Fetch error:", err);
+            alert("Error loading preview.");
+        }
+    });
 
     document.getElementById('add-to-playlist').addEventListener('click', () => {
       const select = document.getElementById('playlist-select');

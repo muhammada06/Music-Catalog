@@ -1,6 +1,6 @@
 import os
-
-from flask import Blueprint, current_app, render_template, request, redirect, send_file, send_from_directory, url_for, abort, flash
+import requests
+from flask import Blueprint, current_app, render_template, request, redirect, send_file, send_from_directory, url_for, abort, flash, jsonify
 from flask_login import login_required, current_user
 from app.models import User, Song, Playlist, linkPlaylistSong
 from app import db
@@ -101,3 +101,61 @@ def play(song_id):
     folder_path = os.path.abspath(os.path.join('instance', 'demo_song'))
 
     return send_from_directory(folder_path, song.audio_file)
+
+@user.route('/preview/stream/<int:song_id>')
+@login_required
+def stream_preview(song_id):
+    song = Song.query.get_or_404(song_id)
+    
+    if not song.preview_url:
+        abort(404)
+
+    try:
+        r = requests.get(song.preview_url, stream=True, timeout=10)
+        r.raise_for_status()
+
+        from flask import Response
+        def generate():
+            for chunk in r.iter_content(chunk_size=8192):
+                yield chunk
+
+        return Response(
+            generate(),
+            content_type=r.headers.get('Content-Type', 'audio/mpeg'),
+            headers={
+                'Accept-Ranges': 'bytes',
+                'Cache-Control': 'no-cache'
+            }
+        )
+    except Exception as e:
+        print("Stream error:", e)
+        abort(502)
+
+@user.route('/preview/<int:song_id>')
+@login_required
+def get_preview(song_id):
+    song = Song.query.get_or_404(song_id)
+    preview = None
+
+    #return cached values if already stored
+    if song.preview_url and song.deezer_track_id:
+        return jsonify({"preview": song.preview_url, "deezer_id": song.deezer_track_id})
+
+    try:
+        query = f"{song.title} {song.artist}"
+        url = f"https://api.deezer.com/search?q={query}"
+        res = requests.get(url, timeout=3).json()
+
+        if res.get("data"):
+            for track in res["data"]:
+                if song.artist.lower() in track["artist"]["name"].lower():
+                    preview = track.get("preview")
+                    deezer_id = track.get("id")
+                    song.preview_url = preview
+                    song.deezer_track_id = deezer_id  # ✅ store it
+                    db.session.commit()
+                    return jsonify({"preview": preview, "deezer_id": deezer_id})
+    except Exception as e:
+        print("Deezer error:", e)
+
+    return jsonify({"preview": None, "deezer_id": None})

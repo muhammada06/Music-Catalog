@@ -8,6 +8,7 @@ import os
 import csv
 import io
 import json
+import requests
 
 admin = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -58,6 +59,7 @@ def dashboard():
 
 @admin.route('/add', methods=['GET', 'POST'])
 @login_required
+
 def add_song():
     admin_required()
 
@@ -81,14 +83,20 @@ def add_song():
             os.makedirs(COVER_DIR, exist_ok=True)
             cover.save(os.path.join(COVER_DIR, cover_filename))
 
+        title = request.form.get('title')
+        artist = request.form.get('artist')
+      
         song = Song(
-            title=request.form.get('title'),
-            artist=request.form.get('artist'),
+            title=title,
+            artist=artist,
             album=request.form.get('album'),
             genre=request.form.get('genre'),
             release_date=release_date,
             audio_file=audio_filename,
             album_cover=cover_filename,
+            online_source=request.form.get('online_source'),
+            preview_url=None,        
+            deezer_track_id=None,  
             user_id=current_user.id
         )
 
@@ -161,6 +169,8 @@ def import_songs():
             except ValueError:
                 continue
 
+        print(f"Fetching preview for: {title}")
+
         song = Song(
             title=title,
             artist=artist,
@@ -170,6 +180,8 @@ def import_songs():
             audio_file=None,
             album_cover=((mapped.get('album_cover') or '')[:255]) or None,
             online_source=(mapped.get('online_source') or '').strip() or None,
+            preview_url=None,       
+            deezer_track_id=None, 
             user_id=current_user.id
         )
         db.session.add(song)
