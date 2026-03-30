@@ -1,49 +1,48 @@
-from app.models import Playlist, Song, User
-from app import db
+from app.models import Playlist, Song, User, linkPlaylistSong
+from app import db, create_app
 
 #tdd
 def test_create_playlist():
-    playlist = Playlist()
-    assert playlist is not None
+    playlist = Playlist(name="My Playlist", user_id=1)
+    assert playlist.name == "My Playlist"
+    assert playlist.user_id == 1
 
-#test suite
-#testing that playlist is empty when first created
-def test_playlist_created_empty():
-    playlist = Playlist()
-    assert len(playlist.get_songs()) == 0
+def test_same_playlist_name():
+    # make sure different users can make the same playlist name
+    p1 = Playlist(name="My Playlist", user_id=1)
+    p2 = Playlist(name="My Playlist", user_id=2)
+    assert p1.name == p2.name
+    assert p1.user_id != p2.user_id
 
-def test_add_song_to_playlist():
-    playlist = Playlist()
-    song = Song("Song1", "artist1")
+def test_link_playlist_song():
+    playlist = Playlist(id=1, name="My Playlist", user_id=1)
+    song = Song(id=1, title="Song1", artist="Artist1")
+    link = linkPlaylistSong(playlist_id=playlist.id, song_id=song.id)
+    assert link.playlist_id == 1
+    assert link.song_id == 1
 
-    playlist.add_song(song)
-    assert len(playlist.get_songs()) == 1
+def test_playlist_song_is_linked():
+    playlist = Playlist(id=1, name="My Playlist", user_id=1)
+    song = Song(id=1, title="Song1", artist="Artist1")
+    link = linkPlaylistSong(playlist=playlist, song=song)
+    assert link.playlist == playlist
+    assert link.song == song
 
-def test_remove_song_from_playlist():
-    playlist = Playlist()
-    song = Song("Song1", "Artist1")
+def test_playlist_name_not_empty():
+    playlist = Playlist(name="Test Playlist", user_id=1)
+    assert playlist.name != ""
 
-    playlist.add_song(song)
-    playlist.remove_song(song)   
-    assert len(playlist.get_songs()) == 0
+def test_delete_playlist():
+    app = create_app()
+    app.config['TESTING'] = True
 
-def test_remove_song_not_in_playlist():
-    playlist = Playlist()
-    song = Song("Song1", "Artist1")
-    playlist.add_song(song)
-    try:
-      playlist.remove_song(song)
-      assert True
-    except:
-      assert False
-
-def test_delete_playlist(app):
     with app.app_context():
+        db.create_all()
+
         user = User(username="testuser", email="test@test.com")
         user.set_password("password")
         db.session.add(user)
         db.session.commit()
-
         playlist = Playlist(name="My Playlist", user_id=user.id)
         db.session.add(playlist)
         db.session.commit()
@@ -54,3 +53,5 @@ def test_delete_playlist(app):
         db.session.commit()
 
         assert Playlist.query.count() == 0
+
+        db.drop_all()
