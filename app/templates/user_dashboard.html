@@ -211,12 +211,7 @@
       ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
       : '';
 
-    const previewButton = `
-      <button id="play-preview" style="display:block;margin:0 auto 16px;padding:8px 24px;background:#1f6feb;color:white;border:none;border-radius:6px;font-size:0.88rem;font-weight:600;cursor:pointer;">
-        ▶ Load Preview
-      </button>
-      <div id="preview-container"></div>
-    `;
+    const previewButton = `<div id="preview-container"></div>`;
 
     const playlistSelectHtml = `
       <div class="detail-row" style="display:flex; align-items:center; gap:8px;">
@@ -245,19 +240,13 @@
       ${spotifyHtml || audioHtml}
     `;
 
-    const storedPreview = JSON.parse(el.dataset.preview || '""');
-
-    document.getElementById('play-preview').addEventListener('click', async () => {
-      const container = document.getElementById('preview-container');
-      if (container.dataset.loaded === 'true') return;
-
+    (async () => {
       try {
         const res = await fetch(`/user/preview/${id}`);
         const data = await res.json();
         const deezerId = data.deezer_id;
 
         if (deezerId) {
-          //replace cover area with Deezer widget
           const coverArea = document.getElementById('cover-area');
           coverArea.innerHTML = `
             <div class="deezer-widget-area">
@@ -272,18 +261,11 @@
               </iframe>
             </div>
           `;
-
-          //hide play button
-          document.getElementById('play-preview').style.display = 'none';
-          container.dataset.loaded = 'true';
-        } else {
-          alert("No preview available for this song.");
         }
       } catch (err) {
-        console.error("Fetch error:", err);
-        alert("Error loading preview.");
+        console.error("Preview fetch error:", err);
       }
-    });
+    })();
 
     document.getElementById('add-to-playlist').addEventListener('click', () => {
       const select = document.getElementById('playlist-select');
