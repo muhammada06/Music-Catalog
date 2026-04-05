@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify
-from app.models import Song
+from flask_login import current_user
+from app.models import Song, Playlist
 from app import db
 
 homePage = Blueprint('home', __name__)
@@ -25,7 +26,14 @@ def home():
     songs = Song.query.order_by(Song.id).all()
     songs_data = [_song_to_dict(s) for s in songs]
     total = len(songs_data)
-    return render_template("home.html", songs_data=songs_data, total=total)
+
+    favorite_ids = []
+    if current_user.is_authenticated:
+        fav = Playlist.query.filter_by(name='Favorites', user_id=current_user.id).first()
+        if fav:
+            favorite_ids = [link.song_id for link in fav.songs]
+
+    return render_template("home.html", songs_data=songs_data, total=total, favorite_ids=favorite_ids)
 
 
 @homePage.route("/songs-api")

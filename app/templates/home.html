@@ -118,8 +118,9 @@
   {% endif %}
 
 <script>
-const SONGS   = {{ songs_data | tojson }};
-const IS_AUTH = {{ current_user.is_authenticated | tojson }};
+const SONGS    = {{ songs_data | tojson }};
+const IS_AUTH  = {{ current_user.is_authenticated | tojson }};
+const FAV_IDS  = new Set({{ favorite_ids | tojson }});
 {% if current_user.is_authenticated %}
   {% if current_user.is_admin %}
   const DASH_URL = {{ url_for('admin.dashboard') | tojson }};
@@ -174,6 +175,26 @@ function buildCard(song) {
     ov.textContent = '🔒 Sign in to play';
     coverDiv.appendChild(ov);
   }
+
+  // Heart / favorite button
+  const heart = document.createElement('button');
+  heart.className = 'heart-btn' + (FAV_IDS.has(song.id) ? ' heart-active' : '');
+  heart.innerHTML = FAV_IDS.has(song.id) ? '♥' : '♡';
+  if (IS_AUTH) {
+    heart.addEventListener('click', async e => {
+      e.stopPropagation();
+      const res = await fetch('/user/toggle_favorite/' + song.id, { method: 'POST' });
+      const data = await res.json();
+      heart.innerHTML = data.in_favorites ? '♥' : '♡';
+      heart.classList.toggle('heart-active', data.in_favorites);
+      if (data.in_favorites) FAV_IDS.add(song.id); else FAV_IDS.delete(song.id);
+    });
+  } else {
+    heart.title = 'Sign in to save favorites';
+    heart.style.opacity = '0.4';
+    heart.style.cursor = 'default';
+  }
+  coverDiv.appendChild(heart);
   card.appendChild(coverDiv);
 
   const info = document.createElement('div');

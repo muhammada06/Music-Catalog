@@ -376,6 +376,30 @@ footer {
 
 .song-card:hover .song-card-overlay { opacity: 1; }
 
+.heart-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(0,0,0,0.45);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, transform 0.15s;
+  z-index: 2;
+  line-height: 1;
+}
+.song-card:hover .heart-btn { opacity: 1; }
+.heart-btn.heart-active { opacity: 1; color: #e53935; }
+.heart-btn:hover { transform: scale(1.15); }
+
 .song-card-info { padding: 12px 14px; }
 
 .song-card-title {

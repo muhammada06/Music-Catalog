@@ -42,10 +42,52 @@
   background: #1c2128;
 }
 
+.playlist-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
 .playlist-item .s-title {
   font-weight: 700;
   font-size: 0.95rem;
   color: #e6edf3;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlist-edit-btn,
+.playlist-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  opacity: 0;
+  flex-shrink: 0;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: opacity 0.15s, background 0.15s;
+}
+.playlist-item:hover .playlist-edit-btn,
+.playlist-item:hover .playlist-delete-btn { opacity: 1; }
+.playlist-edit-btn:hover { background: #30363d; }
+.playlist-delete-btn:hover { background: #3d1a1a; }
+
+.playlist-rename-input {
+  flex: 1;
+  background: #0d1117;
+  border: 1px solid #58a6ff;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e6edf3;
+  outline: none;
+  width: 100%;
 }
 
 .song-panel {

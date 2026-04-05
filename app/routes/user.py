@@ -101,6 +101,56 @@ def add_to_playlist(song_id):
 
     return redirect(url_for("user.dashboard"))
 
+@user.route('/rename_playlist/<int:playlist_id>', methods=['POST'])
+@login_required
+def rename_playlist(playlist_id):
+    playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first_or_404()
+    if playlist.name == 'Favorites':
+        return jsonify({'error': 'Cannot rename Favorites'}), 403
+    new_name = (request.json or {}).get('name', '').strip()
+    if not new_name:
+        return jsonify({'error': 'Name cannot be empty'}), 400
+    existing = Playlist.query.filter_by(name=new_name, user_id=current_user.id).first()
+    if existing and existing.id != playlist_id:
+        return jsonify({'error': 'A playlist with that name already exists'}), 409
+    playlist.name = new_name
+    db.session.commit()
+    return jsonify({'name': playlist.name})
+
+
+@user.route('/delete_playlist/<int:playlist_id>', methods=['POST'])
+@login_required
+def delete_playlist(playlist_id):
+    playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first_or_404()
+    if playlist.name == 'Favorites':
+        return jsonify({'error': 'Cannot delete Favorites'}), 403
+    linkPlaylistSong.query.filter_by(playlist_id=playlist_id).delete()
+    db.session.delete(playlist)
+    db.session.commit()
+    return jsonify({'deleted': True})
+
+
+@user.route('/toggle_favorite/<int:song_id>', methods=['POST'])
+@login_required
+def toggle_favorite(song_id):
+    song = Song.query.get_or_404(song_id)
+    fav = Playlist.query.filter_by(name='Favorites', user_id=current_user.id).first()
+    if not fav:
+        fav = Playlist(name='Favorites', user_id=current_user.id)
+        db.session.add(fav)
+        db.session.flush()
+
+    link = linkPlaylistSong.query.filter_by(playlist_id=fav.id, song_id=song.id).first()
+    if link:
+        db.session.delete(link)
+        db.session.commit()
+        return jsonify({'in_favorites': False})
+    else:
+        db.session.add(linkPlaylistSong(playlist_id=fav.id, song_id=song.id))
+        db.session.commit()
+        return jsonify({'in_favorites': True})
+
+
 @user.route('/create_playlist', methods=["GET", "POST"])
 @login_required
 def create_playlist():
