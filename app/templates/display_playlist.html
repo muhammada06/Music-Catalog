@@ -30,6 +30,9 @@
             <div class="playlist-item-row">
               <div class="s-title">{{ playlist.name }}</div>
               {% if playlist.name != 'Favorites' %}
+              {% if playlist.owner %}
+              <button class="playlist-public-btn" title="is_public" onclick="togglePrivacy(event, this)">🔒</button>
+              {% endif %}
               <button class="playlist-edit-btn" title="Rename" onclick="startRename(event, this)">🔧</button>
               <button class="playlist-delete-btn" title="Delete" onclick="deletePlaylist(event, this)">🗑️</button>
               {% endif %}
@@ -223,6 +226,12 @@
                 ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
                 ${renderSources(online) ? `<div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${renderSources(online)}</span></div>` : ''}
                 ${playlistSelectHtml}
+                <div style="margin-top:10px;">
+                  <button id="favorite-btn"
+                    style="padding:6px 12px;background:#e5533d;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">
+                    Add to Favorites
+                  </button>
+                </div>
             </div>
             ${spotifyHtml || audioHtml}
         `;
@@ -245,6 +254,40 @@
             form.appendChild(input);
             document.body.appendChild(form);
             form.submit();
+          });
+        }
+
+        const favBtn = document.getElementById('favorite-btn');
+        if (favBtn) {
+          fetch(`/user/is_favorite/${id}`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.is_favorite) {
+                favBtn.textContent = "Remove Favorite";
+              } else {
+                favBtn.textContent = "Add to Favorites";
+              }
+            })
+            .catch(err => console.error("Favorite check error:", err));
+        }
+        if (favBtn) {
+          favBtn.addEventListener('click', async () => {
+            try {
+              const res = await fetch(`/user/toggle_favorite/${id}`, {
+                method: 'POST'
+              });
+
+              const data = await res.json();
+
+              if (data.in_favorites) {
+                favBtn.textContent = "Remove Favorite";
+              } else {
+                favBtn.textContent = "Add to Favorites";
+              }
+
+            } catch (err) {
+              console.error("Favorite error:", err);
+            }
           });
         }
 
@@ -348,12 +391,36 @@
       }
       btn.style.display = '';
     }
-
     input.addEventListener('blur', save);
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
       if (e.key === 'Escape') { input.value = currentName; input.blur(); }
     });
   }
+  function togglePrivacy(e, btn) {
+      e.stopPropagation();
+
+      const item = btn.closest('.playlist-item');
+      const playlistId = item.dataset.id;
+
+      fetch(`/user/toggle_playlist_privacy/${playlistId}`, {
+        method: 'POST'
+      })
+      .then(res => res.json())
+      .then(data => {
+
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
+
+        btn.textContent = data.is_public ? "🌍" : "🔒";
+
+        item.dataset.public = data.is_public;
+
+      })
+      .catch(err => console.error("Privacy toggle error:", err));
+    }
+
 </script>
 {% endblock %}

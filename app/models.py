@@ -33,6 +33,7 @@ class Playlist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    is_public = db.Column(db.Boolean, default=False)
 
     __table_args__ = (db.UniqueConstraint('user_id', 'name'),)
 

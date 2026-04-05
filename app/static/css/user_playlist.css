@@ -61,7 +61,8 @@
 }
 
 .playlist-edit-btn,
-.playlist-delete-btn {
+.playlist-delete-btn,
+.playlist-public-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -73,9 +74,11 @@
   transition: opacity 0.15s, background 0.15s;
 }
 .playlist-item:hover .playlist-edit-btn,
-.playlist-item:hover .playlist-delete-btn { opacity: 1; }
+.playlist-item:hover .playlist-delete-btn,
+.playlist-item:hover .playlist-public-btn { opacity: 1; }
 .playlist-edit-btn:hover { background: #30363d; }
 .playlist-delete-btn:hover { background: #3d1a1a; }
+.playlist-public-btn:hover { background: #30363d; }
 
 .playlist-rename-input {
   flex: 1;
