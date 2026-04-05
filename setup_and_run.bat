@@ -1,7 +1,7 @@
 @echo off
 
 echo Applying any pending migrations...
-flask db upgrade
+poetry run flask db upgrade
 
 echo Starting app...
-python run.py
+poetry run python run.py
