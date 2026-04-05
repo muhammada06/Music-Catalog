@@ -9,9 +9,12 @@
 {% block nav_center %}
 <div class="nav-search">
   <div class="nav-search-input">
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
     <input type="text" id="search-input" placeholder="Search songs, artists, albums…">
   </div>
+  <button id="search-btn" type="button">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+    Search
+  </button>
   <select class="nav-filter-select" id="genre-filter">
     <option value="">All genres</option>
   </select>
@@ -156,7 +159,10 @@
     document.querySelectorAll('.song-item').forEach((el, i) => { el.dataset.originalIndex = i; });
     const total = document.querySelectorAll('.song-item').length;
     document.getElementById('search-count').textContent = total;
-    document.getElementById('search-input').addEventListener('input', applyFiltersAndSort);
+    document.getElementById('search-btn').addEventListener('click', applyFiltersAndSort);
+    document.getElementById('search-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') applyFiltersAndSort();
+    });
     ['genre-filter', 'sort-select'].forEach(id =>
       document.getElementById(id).addEventListener('change', applyFiltersAndSort)
     );
