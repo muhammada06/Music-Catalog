@@ -37,11 +37,7 @@ def creation():
 @user.route('/dashboard')
 @login_required
 def dashboard():
-    # Show all songs in the database for user-side view (read-only)
-    songs = Song.query.all()
-    playlists = current_user.playlists
-    playlists_data = [{'id': p.id, 'name': p.name} for p in playlists]
-    return render_template("user_dashboard.html", songs=songs, playlists=playlists_data)
+    return redirect(url_for('user.browse_playlists'))
 
 @user.route('/playlist/view/<int:playlist_id>')
 @login_required
@@ -62,15 +58,28 @@ def view_playlist(playlist_id):
             "preview_url": link.song.preview_url
         } for link in playlist.songs
     ]
-    
-    return render_template("display_playlist.html", playlist=playlist, songs=songs)
+    playlists_data = [{'id': p.id, 'name': p.name} for p in current_user.playlists]
+    return render_template("display_playlist.html", playlist=playlist, songs=songs, playlists=playlists_data)
 
 @user.route('/playlists')
 @login_required
 def browse_playlists():
-    playlists = Playlist.query.all()
-    playlists_data = [{'id': p.id, 'name': p.name} for p in playlists]
-    return render_template("display_playlist.html", playlists=playlists_data)
+    songs_data = [
+        {
+            "id": s.id,
+            "title": s.title,
+            "artist": s.artist,
+            "album": s.album,
+            "genre": s.genre,
+            "release_date": s.release_date.isoformat() if s.release_date else "",
+            "audio_file": s.audio_file,
+            "album_cover": s.album_cover,
+            "online_source": s.online_source,
+            "preview_url": s.preview_url
+        } for s in Song.query.all()
+    ]
+    playlists_data = [{'id': p.id, 'name': p.name} for p in current_user.playlists]
+    return render_template("display_playlist.html", songs=songs_data, playlists=playlists_data)
 
 @user.route('/add_to_playlist/<int:song_id>', methods=["POST"])
 @login_required
@@ -90,7 +99,7 @@ def add_to_playlist(song_id):
 
         if song_in_playlist:
             flash(f"{song.title} is already in the {playlist.name}!", "error")
-            return redirect(url_for("user.dashboard"))
+            return redirect(url_for("user.browse_playlists"))
 
         link = linkPlaylistSong(playlist_id=playlist.id, song_id=song.id)
 
@@ -99,7 +108,21 @@ def add_to_playlist(song_id):
 
         flash(f"The song {song.title} has been added to your {playlist.name}!", "success")
 
-    return redirect(url_for("user.dashboard"))
+    return redirect(url_for("user.browse_playlists"))
+
+@user.route('/add_to_playlist_ajax/<int:song_id>', methods=['POST'])
+@login_required
+def add_to_playlist_ajax(song_id):
+    playlist_id = (request.json or {}).get('playlist_id')
+    if not playlist_id:
+        return jsonify({'error': 'No playlist selected'}), 400
+    playlist = Playlist.query.filter_by(id=int(playlist_id), user_id=current_user.id).first_or_404()
+    song = Song.query.get_or_404(song_id)
+    if not linkPlaylistSong.query.filter_by(playlist_id=playlist.id, song_id=song.id).first():
+        db.session.add(linkPlaylistSong(playlist_id=playlist.id, song_id=song.id))
+        db.session.commit()
+    return jsonify({'added': True, 'playlist': playlist.name})
+
 
 @user.route('/rename_playlist/<int:playlist_id>', methods=['POST'])
 @login_required
@@ -160,7 +183,7 @@ def create_playlist():
 
         if existing_playlist:
             flash("A playlist with that name already exists", "error")
-            return redirect(url_for("user.dashboard"))
+            return redirect(url_for("user.browse_playlists"))
         
         playlist = Playlist(name=playlist_name, user_id=current_user.id)
     
@@ -169,7 +192,7 @@ def create_playlist():
 
         flash("Your playlist has been successfully created, you may now add songs to it!", "success")
 
-        return redirect(url_for("user.dashboard"))
+        return redirect(url_for("user.browse_playlists"))
     return render_template("create_playlist.html")
 
 @user.route('/playlist/<int:playlist_id>')

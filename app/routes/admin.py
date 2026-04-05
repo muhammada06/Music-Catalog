@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, abort, flash, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, abort, flash, send_from_directory, jsonify
 from flask_login import login_required, current_user
 from app.models import Song, User
 from app import db
@@ -49,6 +49,52 @@ def creation():
         flash("Admin account created. Please log in.", "success")
         return redirect(url_for("auth.login"))
     return redirect(url_for("auth.login"))
+
+@admin.route('/home')
+@login_required
+def home():
+    admin_required()
+    return render_template('admin_home.html')
+
+@admin.route('/accounts')
+@login_required
+def accounts():
+    admin_required()
+    users = User.query.order_by(User.is_admin.desc(), User.username).all()
+    return render_template('admin_accounts.html', users=users)
+
+@admin.route('/toggle_block/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_block(user_id):
+    admin_required()
+    if user_id == current_user.id:
+        return jsonify({'error': 'Cannot block yourself'}), 400
+    user = User.query.get_or_404(user_id)
+    user.is_blocked = not user.is_blocked
+    db.session.commit()
+    return jsonify({'blocked': user.is_blocked})
+
+@admin.route('/toggle_admin/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_admin(user_id):
+    admin_required()
+    if user_id == current_user.id:
+        return jsonify({'error': 'Cannot change your own role'}), 400
+    user = User.query.get_or_404(user_id)
+    user.is_admin = not user.is_admin
+    db.session.commit()
+    return jsonify({'is_admin': user.is_admin})
+
+@admin.route('/delete_user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    admin_required()
+    if user_id == current_user.id:
+        return jsonify({'error': 'Cannot delete yourself'}), 400
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'deleted': True})
 
 @admin.route('/dashboard')
 @login_required

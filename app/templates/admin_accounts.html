@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Account Management{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_home.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-home">
+  <div class="admin-home-header">
+    <div class="admin-home-badge">Account Management</div>
+    <h1>All Accounts</h1>
+    <p>{{ users|length }} account{{ 's' if users|length != 1 else '' }} registered</p>
+  </div>
+
+  <div class="accounts-table-wrap">
+    <table class="accounts-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr id="row-{{ u.id }}" class="{% if u.is_blocked %}row-blocked{% endif %}">
+          <td class="td-id">{{ u.id }}</td>
+          <td class="td-username">
+            {{ u.username }}
+            {% if u.id == current_user.id %}<span class="you-badge">you</span>{% endif %}
+          </td>
+          <td class="td-email">{{ u.email or '—' }}</td>
+          <td class="td-role">
+            <span class="role-badge {% if u.is_admin %}role-admin{% else %}role-user{% endif %}" id="role-{{ u.id }}">
+              {{ 'Admin' if u.is_admin else 'User' }}
+            </span>
+          </td>
+          <td class="td-status">
+            <span class="status-badge {% if u.is_blocked %}status-blocked{% else %}status-active{% endif %}" id="status-{{ u.id }}">
+              {{ 'Blocked' if u.is_blocked else 'Active' }}
+            </span>
+          </td>
+          <td class="td-actions">
+            {% if u.id != current_user.id %}
+            <button class="act-btn act-block" id="block-btn-{{ u.id }}"
+              onclick="toggleBlock({{ u.id }})"
+              title="{{ 'Unblock' if u.is_blocked else 'Block' }}">
+              {{ '🔓 Unblock' if u.is_blocked else '🔒 Block' }}
+            </button>
+            <button class="act-btn act-role" id="role-btn-{{ u.id }}"
+              onclick="toggleAdmin({{ u.id }})"
+              title="{{ 'Demote to User' if u.is_admin else 'Promote to Admin' }}">
+              {{ '⬇ Demote' if u.is_admin else '⬆ Promote' }}
+            </button>
+            <button class="act-btn act-delete"
+              onclick="deleteUser({{ u.id }}, '{{ u.username }}')">
+              🗑 Delete
+            </button>
+            {% else %}
+            <span style="color:#484f58;font-size:0.8rem;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  async function toggleBlock(userId) {
+    const res = await fetch(`/admin/toggle_block/${userId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    const row = document.getElementById(`row-${userId}`);
+    const statusEl = document.getElementById(`status-${userId}`);
+    const btn = document.getElementById(`block-btn-${userId}`);
+    if (data.blocked) {
+      row.classList.add('row-blocked');
+      statusEl.className = 'status-badge status-blocked';
+      statusEl.textContent = 'Blocked';
+      btn.textContent = '🔓 Unblock';
+    } else {
+      row.classList.remove('row-blocked');
+      statusEl.className = 'status-badge status-active';
+      statusEl.textContent = 'Active';
+      btn.textContent = '🔒 Block';
+    }
+  }
+
+  async function toggleAdmin(userId) {
+    const res = await fetch(`/admin/toggle_admin/${userId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    const roleEl = document.getElementById(`role-${userId}`);
+    const btn = document.getElementById(`role-btn-${userId}`);
+    if (data.is_admin) {
+      roleEl.className = 'role-badge role-admin';
+      roleEl.textContent = 'Admin';
+      btn.textContent = '⬇ Demote';
+    } else {
+      roleEl.className = 'role-badge role-user';
+      roleEl.textContent = 'User';
+      btn.textContent = '⬆ Promote';
+    }
+  }
+
+  async function deleteUser(userId, username) {
+    if (!confirm(`Delete account "${username}"? This cannot be undone.`)) return;
+    const res = await fetch(`/admin/delete_user/${userId}`, { method: 'POST' });
+    const data = await res.json();
+    if (data.error) { alert(data.error); return; }
+    document.getElementById(`row-${userId}`).remove();
+  }
+</script>
+{% endblock %}

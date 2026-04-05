@@ -17,6 +17,12 @@
     <!-- Left: Playlists -->
     <div class="playlist-panel">
     <div class="playlist-list" id="playlist-list">
+        <div class="playlist-item" data-id="recent" onclick="selectPlaylist(this)">
+          <div class="playlist-item-row">
+            <div class="s-title">🕐 Recent</div>
+            <span id="recent-count" style="font-size:0.75rem;color:#484f58;"></span>
+          </div>
+        </div>
         {% for playlist in playlists %}
         <div class="playlist-item" onclick="selectPlaylist(this)"
             data-id="{{ playlist.id }}"
@@ -73,6 +79,7 @@
 
 <script>
   const USER_PLAYLISTS = JSON.parse('{{ playlists | tojson | safe }}');
+  const ALL_SONGS = {{ songs | tojson | safe }};
 </script>
 
 <script>
@@ -97,58 +104,57 @@
     }).join('');
   }
 
+    function buildSongItem(song) {
+        const div = document.createElement("div");
+        div.className = "song-item";
+        div.onclick = () => selectSong(div);
+        div.dataset.id = song.id;
+        div.dataset.title = song.title;
+        div.dataset.artist = song.artist;
+        div.dataset.album = song.album || "";
+        div.dataset.genre = song.genre || "";
+        div.dataset.date = song.release_date || "";
+        div.dataset.audio = song.audio_file || "";
+        div.dataset.cover = song.album_cover
+            ? (song.album_cover.startsWith("http") ? song.album_cover : `/admin/cover/${song.album_cover}`)
+            : "";
+        div.dataset.online = song.online_source || "";
+        div.dataset.preview = song.preview_url || "";
+        div.innerHTML = `<div class="s-title">${song.title}</div>
+            <div class="s-meta">${song.artist}${song.album ? ` · ${song.album}` : ""}</div>`;
+        return div;
+    }
+
     function selectPlaylist(el) {
-        // highlight selected playlist
         document.querySelectorAll('.playlist-item').forEach(i => i.classList.remove('active'));
         el.classList.add('active');
 
         const id = el.dataset.id;
+        const container = document.getElementById('song-list');
+        container.innerHTML = "";
+
+        if (id === 'recent') {
+            const recentIds = JSON.parse(localStorage.getItem('musicRecentHistory') || '[]');
+            if (!recentIds.length) {
+                container.innerHTML = '<p class="empty-msg">No songs played yet.</p>';
+                return;
+            }
+            const songMap = {};
+            ALL_SONGS.forEach(s => { songMap[s.id] = s; });
+            recentIds.forEach(sid => {
+                if (songMap[sid]) container.appendChild(buildSongItem(songMap[sid]));
+            });
+            return;
+        }
 
         fetch(`/user/playlist/${id}`)
         .then(res => res.json())
         .then(songs => {
-            const container = document.getElementById('song-list');
-
-            // clear existing songs
-            container.innerHTML = "";
-
             if (!songs || songs.length === 0) {
                 container.innerHTML = `<p class="empty-msg">No songs in this playlist.</p>`;
                 return;
             }
-
-            // build each song item
-            songs.forEach(song => {
-                const div = document.createElement("div");
-                div.className = "song-item";
-
-                // attach click handler
-                div.onclick = () => selectSong(div);
-
-                // attach all data attributes
-                div.dataset.id = song.id;
-                div.dataset.title = song.title;
-                div.dataset.artist = song.artist;
-                div.dataset.album = song.album || "";
-                div.dataset.genre = song.genre || "";
-                div.dataset.date = song.release_date || "";
-                div.dataset.audio = song.audio_file || "";
-                div.dataset.cover = song.album_cover 
-                    ? (song.album_cover.startsWith("http") ? song.album_cover : `/admin/cover/${song.album_cover}`) 
-                    : "";
-                div.dataset.online = song.online_source || "";
-                div.dataset.preview = song.preview_url || "";
-
-                // inner HTML
-                div.innerHTML = `
-                    <div class="s-title">${song.title}</div>
-                    <div class="s-meta">
-                        ${song.artist}${song.album ? ` · ${song.album}` : ""}
-                    </div>
-                `;
-
-                container.appendChild(div);
-            });
+            songs.forEach(song => container.appendChild(buildSongItem(song)));
         })
         .catch(err => {
             console.error("Error loading playlist:", err);
@@ -181,8 +187,19 @@
             `;
         }
 
-        const id     = el.dataset.id;
+        const id       = el.dataset.id;
         const playlists = USER_PLAYLISTS;
+
+        const playlistSelectHtml = playlists && playlists.length ? `
+          <div class="detail-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span class="label" style="margin-right:4px;">Add to Playlist</span>
+            <select id="playlist-select" class="nav-filter-select" style="flex:1;min-width:0;">
+              <option value="">Select Playlist</option>
+              <option value="NEW">+ New Playlist</option>
+              ${playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+            </select>
+            <button id="add-to-playlist-btn" class="btn" style="padding:6px 12px;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">Add</button>
+          </div>` : '';
 
         const coverHtml = cover
             ? `<div class="cover-area" id="cover-area"><img src="${cover}" alt="Album Cover"></div>`
@@ -205,9 +222,31 @@
                 ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
                 ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
                 ${renderSources(online) ? `<div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${renderSources(online)}</span></div>` : ''}
+                ${playlistSelectHtml}
             </div>
             ${spotifyHtml || audioHtml}
         `;
+
+        // Wire up Add to Playlist button
+        const addBtn = document.getElementById('add-to-playlist-btn');
+        if (addBtn) {
+          addBtn.addEventListener('click', () => {
+            const select = document.getElementById('playlist-select');
+            const playlist_id = select.value;
+            if (!playlist_id) return alert("Select a playlist!");
+            if (playlist_id === 'NEW') { window.location = '/user/create_playlist'; return; }
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/user/add_to_playlist/${id}`;
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'playlist_id';
+            input.value = playlist_id;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+          });
+        }
 
         (async () => {
           try {
@@ -236,6 +275,22 @@
         })();
 
     }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const recentEl = document.querySelector('.playlist-item[data-id="recent"]');
+    const recentIds = JSON.parse(localStorage.getItem('musicRecentHistory') || '[]');
+    const countEl = document.getElementById('recent-count');
+    if (countEl) countEl.textContent = recentIds.length || '';
+    if (recentEl) selectPlaylist(recentEl);
+
+    const songId = new URLSearchParams(window.location.search).get('song');
+    if (songId) {
+      setTimeout(() => {
+        const el = document.querySelector(`.song-item[data-id="${songId}"]`);
+        if (el) { el.scrollIntoView({ block: 'nearest' }); selectSong(el); }
+      }, 50);
+    }
+  });
 
   async function deletePlaylist(e, btn) {
     e.stopPropagation();

@@ -24,11 +24,14 @@ def login():
         user= User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
+            if user.is_blocked:
+                flash('Your account has been blocked. Contact an administrator.', 'error')
+                return render_template('login.html')
             login_user(user)
             if user.is_admin:
-                return redirect(url_for('admin.dashboard'))
-            
-            return redirect(url_for('user.dashboard'))
+                return redirect(url_for('admin.home'))
+
+            return redirect(url_for('user.browse_playlists'))
         
         flash('Invalid email or password.', 'error')
         return render_template('login.html')

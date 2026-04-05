@@ -28,12 +28,15 @@ def home():
     total = len(songs_data)
 
     favorite_ids = []
+    playlists_data = []
     if current_user.is_authenticated:
         fav = Playlist.query.filter_by(name='Favorites', user_id=current_user.id).first()
         if fav:
             favorite_ids = [link.song_id for link in fav.songs]
+        if not current_user.is_admin:
+            playlists_data = [{'id': p.id, 'name': p.name} for p in current_user.playlists]
 
-    return render_template("home.html", songs_data=songs_data, total=total, favorite_ids=favorite_ids)
+    return render_template("home.html", songs_data=songs_data, total=total, favorite_ids=favorite_ids, playlists_data=playlists_data)
 
 
 @homePage.route("/songs-api")

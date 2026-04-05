@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin_home.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-home">
+  <div class="admin-home-header">
+    <div class="admin-home-badge">Admin Panel</div>
+    <h1>Welcome back, {{ current_user.username }}</h1>
+    <p>What would you like to manage today?</p>
+  </div>
+
+  <div class="admin-home-grid">
+    <a href="{{ url_for('admin.dashboard') }}" class="admin-card">
+      <div class="admin-card-icon">🎵</div>
+      <div class="admin-card-body">
+        <div class="admin-card-title">Song Dashboard</div>
+        <div class="admin-card-desc">Add, edit, import, and delete songs in the catalog.</div>
+      </div>
+      <div class="admin-card-arrow">→</div>
+    </a>
+
+    <a href="{{ url_for('admin.accounts') }}" class="admin-card">
+      <div class="admin-card-icon">👥</div>
+      <div class="admin-card-body">
+        <div class="admin-card-title">Account Management</div>
+        <div class="admin-card-desc">View all users and admins. Block, promote, or remove accounts.</div>
+      </div>
+      <div class="admin-card-arrow">→</div>
+    </a>
+  </div>
+</div>
+{% endblock %}

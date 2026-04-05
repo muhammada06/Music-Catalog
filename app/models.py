@@ -8,7 +8,8 @@ class User(UserMixin, db.Model):
     username   = db.Column(db.String(80),  unique=True, nullable=False)
     password   = db.Column(db.String(200), nullable=False)
     email      = db.Column(db.String(255), unique=True, nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)
+    is_admin   = db.Column(db.Boolean, default=False)
+    is_blocked = db.Column(db.Boolean, default=False)
     playlists = db.relationship('Playlist', backref='user', lazy=True)
 
     def set_username(self, plain_user_name):

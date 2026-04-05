@@ -65,8 +65,7 @@
             {% if current_user.is_admin %}
               <a href="{{ url_for('admin.dashboard') }}" class="header-btn header-btn-green">Go to Dashboard</a>
             {% else %}
-              <a href="{{ url_for('user.dashboard') }}" class="header-btn header-btn-blue">Browse Music</a>
-              <a href="{{ url_for('user.browse_playlists') }}" class="header-btn header-btn-purple">🎵 Browse Playlists</a>
+              <a href="{{ url_for('user.browse_playlists') }}" class="header-btn header-btn-blue">🎵 My Playlists</a>
             {% endif %}
           </div>
         {% else %}
@@ -105,7 +104,7 @@
           <a href="{{ url_for('auth.getForgot') }}" class="forgot-link">Forgot your password?</a>
           <div class="auth-divider"><span>New here?</span></div>
           <a href="{{ url_for('user.get') }}" class="create-btn create-btn-green">🎧 Create Listener Account</a>
-          <a href="{{ url_for('admin.get') }}" class="create-btn create-btn-red">🎤 Create Artist Account</a>
+          <a href="{{ url_for('admin.get') }}" class="create-btn create-btn-red">🎤 Create Admin Account</a>
         </div>
       </div>
     </div>
@@ -121,11 +120,12 @@
 const SONGS    = {{ songs_data | tojson }};
 const IS_AUTH  = {{ current_user.is_authenticated | tojson }};
 const FAV_IDS  = new Set({{ favorite_ids | tojson }});
+const PLAYLISTS = {{ playlists_data | tojson }};
 {% if current_user.is_authenticated %}
   {% if current_user.is_admin %}
-  const DASH_URL = {{ url_for('admin.dashboard') | tojson }};
+  const DASH_URL = {{ url_for('admin.home') | tojson }};
   {% else %}
-  const DASH_URL = {{ url_for('user.dashboard') | tojson }};
+  const DASH_URL = {{ url_for('user.browse_playlists') | tojson }};
   {% endif %}
 {% else %}
   const DASH_URL = '';
@@ -153,7 +153,12 @@ function escHtml(s) {
 function buildCard(song) {
   const card = document.createElement('div');
   card.className = 'song-card' + (IS_AUTH ? ' song-card--link' : '');
-  if (IS_AUTH) card.onclick = () => { window.location = DASH_URL + '?song=' + song.id; };
+  if (IS_AUTH) card.onclick = () => {
+    let recent = JSON.parse(localStorage.getItem('musicRecentHistory') || '[]');
+    recent = [song.id, ...recent.filter(id => id !== song.id)].slice(0, 30);
+    localStorage.setItem('musicRecentHistory', JSON.stringify(recent));
+    window.location = DASH_URL + '?song=' + song.id;
+  };
 
   const coverDiv = document.createElement('div');
   coverDiv.className = 'song-card-cover';
@@ -195,6 +200,54 @@ function buildCard(song) {
     heart.style.cursor = 'default';
   }
   coverDiv.appendChild(heart);
+
+  // 3-dot "add to playlist" menu (auth only)
+  if (IS_AUTH && PLAYLISTS.length > 0) {
+    const menuBtn = document.createElement('button');
+    menuBtn.className = 'song-card-menu-btn';
+    menuBtn.innerHTML = '⋯';
+    menuBtn.title = 'Add to playlist';
+
+    const menu = document.createElement('div');
+    menu.className = 'song-card-menu';
+
+    const sorted = [
+      ...PLAYLISTS.filter(p => p.name === 'Favorites'),
+      ...PLAYLISTS.filter(p => p.name !== 'Favorites'),
+      { id: 'NEW', name: '+ New Playlist' }
+    ];
+    sorted.forEach(p => {
+      const item = document.createElement('div');
+      item.className = 'song-card-menu-item';
+      item.textContent = p.name;
+      item.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (p.id === 'NEW') { window.location = '/user/create_playlist'; return; }
+        const res = await fetch(`/user/add_to_playlist_ajax/${song.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playlist_id: p.id })
+        });
+        const data = await res.json();
+        menu.classList.remove('open');
+        if (data.added) {
+          menuBtn.innerHTML = '✓';
+          setTimeout(() => { menuBtn.innerHTML = '⋯'; }, 1200);
+        }
+      });
+      menu.appendChild(item);
+    });
+
+    menuBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      document.querySelectorAll('.song-card-menu.open').forEach(m => m.classList.remove('open'));
+      menu.classList.toggle('open');
+    });
+
+    coverDiv.appendChild(menuBtn);
+    coverDiv.appendChild(menu);
+  }
+
   card.appendChild(coverDiv);
 
   const info = document.createElement('div');
@@ -300,6 +353,10 @@ searchBtn.addEventListener('click', rebuild);
 searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') rebuild(); });
 groupSelect.addEventListener('change', rebuild);
 sortSelect.addEventListener('change', rebuild);
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.song-card-menu.open').forEach(m => m.classList.remove('open'));
+});
 </script>
 </body>
 </html>

@@ -15,11 +15,11 @@
     {% block nav_center %}{% endblock %}
     <div class="nav-links">
       {% if current_user.is_authenticated %}
-        {% if request.endpoint not in ('admin.dashboard', 'user.dashboard') %}
+        {% if request.endpoint not in ('admin.home', 'admin.dashboard', 'user.browse_playlists') %}
           {% if current_user.is_admin %}
             <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
           {% else %}
-            <a href="{{ url_for('user.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('user.browse_playlists') }}">My Playlists</a>
           {% endif %}
         {% endif %}
         <form action="{{ url_for('auth.logout') }}" method="get" style="display:inline;">
