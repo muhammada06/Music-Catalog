@@ -27,7 +27,7 @@
         <option value="year">Release Year</option>
       </select>
       <select id="sort-select" class="nav-filter-select">
-        <option value="default">Default</option>
+        <option value="default">Popularity</option>
         <option value="asc">A → Z</option>
         <option value="desc">Z → A</option>
       </select>
@@ -258,8 +258,9 @@ function rebuild() {
   // Sort keys
   const keys = Object.keys(groups).sort((a, b) => {
     if (sort === 'default') {
-      // Year: newest first; genre/artist: A→Z
-      return field === 'year' ? b.localeCompare(a) : a.localeCompare(b);
+      if (field === 'genre')  return groups[b].length - groups[a].length; // most songs first
+      if (field === 'year')   return b.localeCompare(a);                  // newest first
+      return a.localeCompare(b);                                           // artist: A→Z
     }
     return sort === 'desc' ? b.localeCompare(a) : a.localeCompare(b);
   });
