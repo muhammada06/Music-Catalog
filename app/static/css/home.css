@@ -277,6 +277,8 @@ footer {
 .header-btn-green:hover { background: #2ea043; }
 .header-btn-purple { background: #6e40c9; color: white; }
 .header-btn-purple:hover { background: #8957e5; }
+.header-btn-red { background: #da3633; color: white; }
+.header-btn-red:hover { background: #f85149; }
 
 /* ── Catalog sections ── */
 .catalog-section {

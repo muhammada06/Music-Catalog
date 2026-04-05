@@ -63,7 +63,7 @@
           <p>Browse the full catalog below.</p>
           <div class="header-actions">
             {% if current_user.is_admin %}
-              <a href="{{ url_for('admin.dashboard') }}" class="header-btn header-btn-green">Go to Dashboard</a>
+              <a href="{{ url_for('admin.home') }}" class="header-btn header-btn-red">Admin Home</a>
             {% else %}
               <a href="{{ url_for('user.browse_playlists') }}" class="header-btn header-btn-blue">🎵 My Playlists</a>
             {% endif %}
