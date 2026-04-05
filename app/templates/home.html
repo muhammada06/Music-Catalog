@@ -29,16 +29,16 @@
 
   <main class="{% if current_user.is_authenticated %}home-full{% else %}home-split{% endif %}">
 
-    <!-- Catalog preview — shown to everyone -->
-    <div class="preview-panel {% if current_user.is_authenticated %}preview-panel--full{% endif %}">
+    <div class="preview-panel {% if current_user.is_authenticated %}preview-panel--full{% endif %}" id="preview-panel">
 
       <div class="preview-header">
         <div class="preview-eyebrow">
           <span class="hero-badge">{% if current_user.is_authenticated %}Welcome back{% else %}Live Catalog{% endif %}</span>
+          <span class="song-count-badge">{{ total }} songs</span>
         </div>
         {% if current_user.is_authenticated %}
           <h2>Hey, {{ current_user.username }} 👋</h2>
-          <p>Here's a preview of the catalog. Head to your dashboard to stream.</p>
+          <p>Browse the full catalog below.</p>
           <div class="header-actions">
             {% if current_user.is_admin %}
               <a href="{{ url_for('admin.dashboard') }}" class="header-btn header-btn-green">Go to Dashboard</a>
@@ -53,77 +53,19 @@
         {% endif %}
       </div>
 
-      {% macro song_card(song) %}
-        <div class="song-card {% if current_user.is_authenticated %}song-card--link{% endif %}"
-          {% if current_user.is_authenticated %}
-            onclick="window.location='{{ url_for('admin.dashboard') if current_user.is_admin else url_for('user.dashboard') }}?song={{ song.id }}'"
-          {% endif %}>
-          <div class="song-card-cover">
-            {% if song.album_cover %}
-              {% if song.album_cover.startswith('http') %}
-                <img src="{{ song.album_cover }}" alt="{{ song.title }}">
-              {% else %}
-                <img src="{{ url_for('admin.serve_cover', filename=song.album_cover) }}" alt="{{ song.title }}">
-              {% endif %}
-            {% else %}
-              <div class="cover-placeholder">🎵</div>
-            {% endif %}
-            {% if not current_user.is_authenticated %}
-              <div class="song-card-overlay">🔒 Sign in to play</div>
-            {% endif %}
-          </div>
-          <div class="song-card-info">
-            <div class="song-card-title">{{ song.title }}</div>
-            <div class="song-card-artist">{{ song.artist }}</div>
-          </div>
-        </div>
-      {% endmacro %}
-
-      {% if new_releases or genre_sections or shuffle %}
-
-        {% if new_releases %}
-        <div class="catalog-section">
-          <div class="section-header">
-            <h3 class="section-title">🆕 New Releases</h3>
-          </div>
-          <div class="section-row">
-            {% for song in new_releases %}{{ song_card(song) }}{% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        {% if shuffle %}
-        <div class="catalog-section">
-          <div class="section-header">
-            <h3 class="section-title">🎲 Discover</h3>
-          </div>
-          <div class="section-row">
-            {% for song in shuffle %}{{ song_card(song) }}{% endfor %}
-          </div>
-        </div>
-        {% endif %}
-
-        {% for section in genre_sections %}
-        <div class="catalog-section">
-          <div class="section-header">
-            <h3 class="section-title">{{ section.name | title }}</h3>
-          </div>
-          <div class="section-row">
-            {% for song in section.songs %}{{ song_card(song) }}{% endfor %}
-          </div>
-        </div>
-        {% endfor %}
-
-      {% else %}
-        <div class="preview-empty">
-          <div style="font-size:3rem; margin-bottom:12px;">🎵</div>
-          No songs added yet. Check back soon.
-        </div>
-      {% endif %}
+      <div id="song-grid"></div>
+      <div id="scroll-sentinel"></div>
+      <div id="grid-spinner" class="grid-spinner" style="display:none;">
+        <div class="spinner-dot"></div>
+        <div class="spinner-dot"></div>
+        <div class="spinner-dot"></div>
+      </div>
+      <div id="grid-end" style="display:none; text-align:center; padding:16px 0; font-size:0.8rem; color:#484f58;">
+        All {{ total }} songs loaded
+      </div>
 
     </div>
 
-    <!-- Right: sign in panel — guests only -->
     {% if not current_user.is_authenticated %}
     <div class="auth-side">
       <div class="auth-side-inner">
@@ -160,5 +102,116 @@
     <footer>&copy; 2026 WaterMelon. All rights reserved.</footer>
   {% endif %}
 
+<script>
+const IS_AUTH = {{ current_user.is_authenticated | tojson }};
+{% if current_user.is_authenticated %}
+  {% if current_user.is_admin %}
+    const DASH_URL = {{ url_for('admin.dashboard') | tojson }};
+  {% else %}
+    const DASH_URL = {{ url_for('user.dashboard') | tojson }};
+  {% endif %}
+{% else %}
+  const DASH_URL = '';
+{% endif %}
+
+const grid   = document.getElementById('song-grid');
+const panel  = document.getElementById('preview-panel');
+const spinner = document.getElementById('grid-spinner');
+const endMsg  = document.getElementById('grid-end');
+const sentinel = document.getElementById('scroll-sentinel');
+
+let page = 0;
+let loading = false;
+let hasMore = true;
+
+function calcPerPage() {
+  const availW = panel.clientWidth - 104; // subtract padding
+  const cols = Math.max(2, Math.floor((availW + 16) / 176));
+  const availH = panel.clientHeight || window.innerHeight;
+  const rows = Math.max(3, Math.ceil(availH / 230) + 1);
+  return cols * rows;
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildCard(song) {
+  const card = document.createElement('div');
+  card.className = 'song-card' + (IS_AUTH ? ' song-card--link' : '');
+  if (IS_AUTH) {
+    card.onclick = () => { window.location = DASH_URL + '?song=' + song.id; };
+  }
+
+  const coverDiv = document.createElement('div');
+  coverDiv.className = 'song-card-cover';
+
+  if (song.cover) {
+    const img = document.createElement('img');
+    img.src = song.cover;
+    img.alt = escHtml(song.title);
+    img.loading = 'lazy';
+    coverDiv.appendChild(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.className = 'cover-placeholder';
+    ph.textContent = '🎵';
+    coverDiv.appendChild(ph);
+  }
+
+  if (!IS_AUTH) {
+    const overlay = document.createElement('div');
+    overlay.className = 'song-card-overlay';
+    overlay.textContent = '🔒 Sign in to play';
+    coverDiv.appendChild(overlay);
+  }
+
+  card.appendChild(coverDiv);
+
+  const info = document.createElement('div');
+  info.className = 'song-card-info';
+  info.innerHTML =
+    '<div class="song-card-title">' + escHtml(song.title) + '</div>' +
+    '<div class="song-card-artist">' + escHtml(song.artist) + '</div>';
+  card.appendChild(info);
+
+  return card;
+}
+
+async function loadMore() {
+  if (loading || !hasMore) return;
+  loading = true;
+  spinner.style.display = 'flex';
+
+  page++;
+  const perPage = calcPerPage();
+
+  try {
+    const res = await fetch('/songs-api?page=' + page + '&per_page=' + perPage);
+    const data = await res.json();
+
+    const frag = document.createDocumentFragment();
+    data.songs.forEach(s => frag.appendChild(buildCard(s)));
+    grid.appendChild(frag);
+
+    hasMore = data.has_more;
+    if (!hasMore) {
+      endMsg.style.display = 'block';
+      observer.disconnect();
+    }
+  } catch (e) {
+    page--; // allow retry on error
+  }
+
+  spinner.style.display = 'none';
+  loading = false;
+}
+
+const observer = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting) loadMore();
+}, { root: panel, rootMargin: '300px' });
+
+observer.observe(sentinel);
+</script>
 </body>
 </html>
