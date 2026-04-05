@@ -12,6 +12,28 @@
       <img src="/static/watermelon.png" style="height:28px; width:28px; object-fit:contain;">
       <span style="color:#e53935;">Music</span><span style="color:#4caf50;"> Catalog</span>
     </a>
+
+    <div class="nav-search">
+      <div class="nav-search-input">
+        <input type="text" id="search-input" placeholder="Search songs, artists…">
+      </div>
+      <button id="search-btn" type="button">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
+        Search
+      </button>
+      <select id="group-select" class="nav-filter-select">
+        <option value="genre">Genre</option>
+        <option value="artist">Artist</option>
+        <option value="year">Release Year</option>
+      </select>
+      <select id="sort-select" class="nav-filter-select">
+        <option value="default">Default</option>
+        <option value="asc">A → Z</option>
+        <option value="desc">Z → A</option>
+      </select>
+      <span class="nav-search-count" id="search-count">{{ total }}</span>
+    </div>
+
     <div class="nav-links">
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('auth.logout') }}" class="btn-ghost">Logout</a>
@@ -53,15 +75,10 @@
         {% endif %}
       </div>
 
-      <div id="song-grid"></div>
-      <div id="scroll-sentinel"></div>
-      <div id="grid-spinner" class="grid-spinner" style="display:none;">
-        <div class="spinner-dot"></div>
-        <div class="spinner-dot"></div>
-        <div class="spinner-dot"></div>
-      </div>
-      <div id="grid-end" style="display:none; text-align:center; padding:16px 0; font-size:0.8rem; color:#484f58;">
-        All {{ total }} songs loaded
+      <div id="catalog-sections"></div>
+      <div id="no-results" style="display:none;" class="preview-empty">
+        <div style="font-size:2rem; margin-bottom:8px;">🔍</div>
+        No songs match your search.
       </div>
 
     </div>
@@ -73,7 +90,6 @@
           <h1>Sign In</h1>
           <p class="subtitle">Stream the full catalog and save your favourites.</p>
         </div>
-
         <form action="{{ url_for('auth.login') }}" method="POST">
           <div class="form-group">
             <label for="username">Username</label>
@@ -85,7 +101,6 @@
           </div>
           <button type="submit" class="submit-btn">Sign In</button>
         </form>
-
         <div class="auth-side-links">
           <a href="{{ url_for('auth.getForgot') }}" class="forgot-link">Forgot your password?</a>
           <div class="auth-divider"><span>New here?</span></div>
@@ -103,33 +118,31 @@
   {% endif %}
 
 <script>
+const SONGS   = {{ songs_data | tojson }};
 const IS_AUTH = {{ current_user.is_authenticated | tojson }};
 {% if current_user.is_authenticated %}
   {% if current_user.is_admin %}
-    const DASH_URL = {{ url_for('admin.dashboard') | tojson }};
+  const DASH_URL = {{ url_for('admin.dashboard') | tojson }};
   {% else %}
-    const DASH_URL = {{ url_for('user.dashboard') | tojson }};
+  const DASH_URL = {{ url_for('user.dashboard') | tojson }};
   {% endif %}
 {% else %}
   const DASH_URL = '';
 {% endif %}
 
-const grid   = document.getElementById('song-grid');
-const panel  = document.getElementById('preview-panel');
-const spinner = document.getElementById('grid-spinner');
-const endMsg  = document.getElementById('grid-end');
-const sentinel = document.getElementById('scroll-sentinel');
+const container   = document.getElementById('catalog-sections');
+const searchBtn   = document.getElementById('search-btn');
+const searchInput = document.getElementById('search-input');
+const groupSelect = document.getElementById('group-select');
+const sortSelect  = document.getElementById('sort-select');
+const countBadge  = document.getElementById('search-count');
+const noResults   = document.getElementById('no-results');
 
-let page = 0;
-let loading = false;
-let hasMore = true;
-
-function calcPerPage() {
-  const availW = panel.clientWidth - 104; // subtract padding
-  const cols = Math.max(2, Math.floor((availW + 16) / 176));
-  const availH = panel.clientHeight || window.innerHeight;
-  const rows = Math.max(3, Math.ceil(availH / 230) + 1);
-  return cols * rows;
+// How many cards to show initially per row (based on panel width)
+function initialBatch() {
+  const panel = document.getElementById('preview-panel');
+  const w = panel ? panel.clientWidth - 104 : window.innerWidth;
+  return Math.max(6, Math.ceil(w / 176) + 2);
 }
 
 function escHtml(s) {
@@ -139,13 +152,10 @@ function escHtml(s) {
 function buildCard(song) {
   const card = document.createElement('div');
   card.className = 'song-card' + (IS_AUTH ? ' song-card--link' : '');
-  if (IS_AUTH) {
-    card.onclick = () => { window.location = DASH_URL + '?song=' + song.id; };
-  }
+  if (IS_AUTH) card.onclick = () => { window.location = DASH_URL + '?song=' + song.id; };
 
   const coverDiv = document.createElement('div');
   coverDiv.className = 'song-card-cover';
-
   if (song.cover) {
     const img = document.createElement('img');
     img.src = song.cover;
@@ -158,60 +168,116 @@ function buildCard(song) {
     ph.textContent = '🎵';
     coverDiv.appendChild(ph);
   }
-
   if (!IS_AUTH) {
-    const overlay = document.createElement('div');
-    overlay.className = 'song-card-overlay';
-    overlay.textContent = '🔒 Sign in to play';
-    coverDiv.appendChild(overlay);
+    const ov = document.createElement('div');
+    ov.className = 'song-card-overlay';
+    ov.textContent = '🔒 Sign in to play';
+    coverDiv.appendChild(ov);
   }
-
   card.appendChild(coverDiv);
 
   const info = document.createElement('div');
   info.className = 'song-card-info';
-  info.innerHTML =
-    '<div class="song-card-title">' + escHtml(song.title) + '</div>' +
-    '<div class="song-card-artist">' + escHtml(song.artist) + '</div>';
+  info.innerHTML = '<div class="song-card-title">' + escHtml(song.title) + '</div>'
+                 + '<div class="song-card-artist">' + escHtml(song.artist) + '</div>';
   card.appendChild(info);
-
   return card;
 }
 
-async function loadMore() {
-  if (loading || !hasMore) return;
-  loading = true;
-  spinner.style.display = 'flex';
+function makeSection(label, songs) {
+  const section = document.createElement('div');
+  section.className = 'catalog-section';
 
-  page++;
-  const perPage = calcPerPage();
+  const header = document.createElement('div');
+  header.className = 'section-header';
+  header.innerHTML = '<h3 class="section-title">' + escHtml(label) + '</h3>'
+                   + '<span class="section-count">' + songs.length + ' songs</span>';
+  section.appendChild(header);
 
-  try {
-    const res = await fetch('/songs-api?page=' + page + '&per_page=' + perPage);
-    const data = await res.json();
+  const row = document.createElement('div');
+  row.className = 'section-row';
+  row.addEventListener('wheel', e => {
+    if (e.deltaY !== 0 && row.scrollWidth > row.clientWidth) {
+      e.preventDefault();
+      row.scrollLeft += e.deltaY;
+    }
+  }, { passive: false });
+  section.appendChild(row);
 
-    const frag = document.createDocumentFragment();
-    data.songs.forEach(s => frag.appendChild(buildCard(s)));
-    grid.appendChild(frag);
+  let rendered = 0;
 
-    hasMore = data.has_more;
-    if (!hasMore) {
-      endMsg.style.display = 'block';
+  function loadMore() {
+    const batch = initialBatch();
+    const slice = songs.slice(rendered, rendered + batch);
+    slice.forEach(s => row.appendChild(buildCard(s)));
+    rendered += slice.length;
+    // Remove sentinel if all loaded
+    if (rendered >= songs.length && sentinel.parentNode) {
+      sentinel.remove();
       observer.disconnect();
     }
-  } catch (e) {
-    page--; // allow retry on error
   }
 
-  spinner.style.display = 'none';
-  loading = false;
+  // Sentinel at end of row triggers more cards
+  const sentinel = document.createElement('div');
+  sentinel.className = 'row-sentinel';
+  row.appendChild(sentinel);
+
+  const observer = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) loadMore();
+  }, { root: row, rootMargin: '300px' });
+  observer.observe(sentinel);
+
+  loadMore(); // initial render
+  return section;
 }
 
-const observer = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting) loadMore();
-}, { root: panel, rootMargin: '300px' });
+function rebuild() {
+  const field = groupSelect.value;
+  const sort  = sortSelect.value;
+  const query = searchInput.value.toLowerCase().trim();
 
-observer.observe(sentinel);
+  // Filter songs by search
+  const filtered = query
+    ? SONGS.filter(s =>
+        (s.title  || '').toLowerCase().includes(query) ||
+        (s.artist || '').toLowerCase().includes(query))
+    : SONGS;
+
+  // Group
+  const groups = {};
+  filtered.forEach(s => {
+    let key;
+    if (field === 'genre')  key = s.genre  || 'Uncategorized';
+    if (field === 'artist') key = s.artist || 'Unknown Artist';
+    if (field === 'year')   key = s.year   ? String(s.year) : 'Unknown Year';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(s);
+  });
+
+  // Sort keys
+  const keys = Object.keys(groups).sort((a, b) => {
+    if (sort === 'default') {
+      // Year: newest first; genre/artist: A→Z
+      return field === 'year' ? b.localeCompare(a) : a.localeCompare(b);
+    }
+    return sort === 'desc' ? b.localeCompare(a) : a.localeCompare(b);
+  });
+
+  container.innerHTML = '';
+  keys.forEach(key => container.appendChild(makeSection(key, groups[key])));
+
+  noResults.style.display = keys.length === 0 ? '' : 'none';
+  countBadge.textContent = filtered.length;
+}
+
+// Initial render
+rebuild();
+
+searchBtn.addEventListener('click', rebuild);
+searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') rebuild(); });
+groupSelect.addEventListener('change', rebuild);
+sortSelect.addEventListener('change', rebuild);
 </script>
 </body>
 </html>

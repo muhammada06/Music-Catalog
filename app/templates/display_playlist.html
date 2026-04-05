@@ -67,6 +67,27 @@
 </script>
 
 <script>
+  function escAttr(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  }
+
+  function renderSources(online) {
+    if (!online) return '';
+    const urls = online.split(',').map(u => u.trim()).filter(Boolean);
+    if (!urls.length) return '';
+    return urls.map(url => {
+      try {
+        const domain = new URL(url).hostname;
+        const favicon = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=32';
+        return '<a href="' + escAttr(url) + '" target="_blank" title="' + escAttr(domain) + '" style="display:inline-flex;align-items:center;margin-right:10px;">'
+             + '<img src="' + favicon + '" width="24" height="24" style="border-radius:4px;">'
+             + '</a>';
+      } catch(e) {
+        return '<a href="' + escAttr(url) + '" target="_blank" style="color:#58a6ff;font-size:0.8rem;">🔗</a>';
+      }
+    }).join('');
+  }
+
     function selectPlaylist(el) {
         // highlight selected playlist
         document.querySelectorAll('.playlist-item').forEach(i => i.classList.remove('active'));
@@ -162,24 +183,8 @@
             ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
             : '';
 
-        const previewButton = `
-            <button id="play-preview" style="display:block;margin:0 auto 16px;padding:8px 24px;background:#1f6feb;color:white;border:none;border-radius:6px;font-size:0.88rem;font-weight:600;cursor:pointer;">
-                ▶ Load Preview
-            </button>
-            <div id="preview-container"></div>
-        `;
+        const previewButton = `<div id="preview-container"></div>`;
 
-        const playlistSelectHtml = `
-            <div class="detail-row" style="display:flex; align-items:center; gap:8px;">
-                <span class="label" style="margin-right:8px;">Add to Playlist</span>
-                <select id="playlist-select" class="nav-filter-select">
-                <option value="">Select Playlist</option>
-                <option value="NEW">NEW</option>
-                ${playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-                </select>
-                <button id="add-to-playlist" class="btn">Add</button>
-            </div>
-        `;
 
         document.getElementById('detail-panel').innerHTML = `
             ${coverHtml}
@@ -190,29 +195,21 @@
                 ${album ? `<div class="detail-row"><span class="label">Album</span><span class="value">${album}</span></div>` : ''}
                 ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
                 ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
-                ${online ? `<div class="detail-row"><span class="label">Online Source</span><span class="value">${online}</span></div>` : ''}
-                ${playlistSelectHtml}
+                ${renderSources(online) ? `<div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${renderSources(online)}</span></div>` : ''}
             </div>
             ${spotifyHtml || audioHtml}
         `;
 
-        const storedPreview = JSON.parse(el.dataset.preview || '""');
-
-        document.getElementById('play-preview').addEventListener('click', async () => {
-        const container = document.getElementById('preview-container');
-        if (container.dataset.loaded === 'true') return;
-
-        try {
+        (async () => {
+          try {
             const res = await fetch(`/user/preview/${id}`);
             const data = await res.json();
             const deezerId = data.deezer_id;
 
             if (deezerId) {
-            //replace cover area with Deezer widget
-            const coverArea = document.getElementById('cover-area');
-            coverArea.innerHTML = `
+              document.getElementById('cover-area').innerHTML = `
                 <div class="deezer-widget-area">
-                <iframe
+                  <iframe
                     title="deezer-widget"
                     src="https://widget.deezer.com/widget/dark/track/${deezerId}"
                     width="100%"
@@ -220,41 +217,15 @@
                     frameborder="0"
                     allowtransparency="true"
                     allow="encrypted-media; clipboard-write">
-                </iframe>
+                  </iframe>
                 </div>
-            `;
-
-            //hide play button
-            document.getElementById('play-preview').style.display = 'none';
-            container.dataset.loaded = 'true';
-            } else {
-            alert("No preview available for this song.");
+              `;
             }
-        } catch (err) {
-            console.error("Fetch error:", err);
-            alert("Error loading preview.");
-        }
-        });
+          } catch (err) {
+            console.error("Preview fetch error:", err);
+          }
+        })();
 
-        document.getElementById('add-to-playlist').addEventListener('click', () => {
-        const select = document.getElementById('playlist-select');
-        const playlist_id = select.value;
-
-        if (!playlist_id) return alert("Select a playlist!");
-
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/user/add_to_playlist/${id}`;
-    
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'playlist_id';
-        input.value = playlist_id;
-        form.appendChild(input);
-
-        document.body.appendChild(form);
-        form.submit();
-        });
     }
 </script>
 {% endblock %}

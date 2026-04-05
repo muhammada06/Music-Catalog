@@ -38,6 +38,73 @@ nav {
 
 .nav-links { display: flex; gap: 12px; }
 
+.nav-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 600px;
+  margin: 0 24px;
+}
+
+.nav-search-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-search-input input {
+  width: 100%;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 0.85rem;
+  color: #e6edf3;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.nav-search-input input:focus { border-color: #58a6ff; }
+.nav-search-input input::placeholder { color: #484f58; }
+
+#search-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  color: #e6edf3;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+#search-btn:hover { background: #30363d; border-color: #58a6ff; }
+
+.nav-filter-select {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  color: #8b949e;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  max-width: 140px;
+  flex-shrink: 0;
+}
+.nav-filter-select:focus { border-color: #58a6ff; }
+
+.nav-search-count {
+  font-size: 0.75rem;
+  color: #484f58;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .nav-links a {
   padding: 8px 18px;
   border-radius: 6px;
@@ -215,7 +282,8 @@ footer {
 .catalog-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  margin-bottom: 32px;
 }
 
 .section-header {
@@ -329,39 +397,18 @@ footer {
 }
 
 
-/* ── Infinite scroll grid ── */
-#song-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
+.row-sentinel {
+  flex-shrink: 0;
+  width: 1px;
+  height: 1px;
+  align-self: stretch;
 }
 
-#scroll-sentinel { height: 1px; }
-
-.grid-spinner {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 20px 0;
+.section-count {
+  font-size: 0.75rem;
+  color: #484f58;
+  font-weight: 500;
 }
-
-.spinner-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #30363d;
-  animation: bounce 1.2s infinite ease-in-out;
-}
-.spinner-dot:nth-child(2) { animation-delay: 0.2s; }
-.spinner-dot:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
-  40% { transform: scale(1); opacity: 1; }
-}
-
-/* Remove fixed width on cards inside the grid (grid controls sizing) */
-#song-grid .song-card { width: auto; }
 
 .preview-empty {
   flex: 1;
