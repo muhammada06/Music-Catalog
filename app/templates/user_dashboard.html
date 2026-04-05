@@ -170,7 +170,6 @@
   function selectSong(el) {
     document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
-
     const title  = el.dataset.title;
     const artist = el.dataset.artist;
     const album  = el.dataset.album;

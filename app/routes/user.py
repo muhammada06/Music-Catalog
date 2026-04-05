@@ -43,6 +43,35 @@ def dashboard():
     playlists_data = [{'id': p.id, 'name': p.name} for p in playlists]
     return render_template("user_dashboard.html", songs=songs, playlists=playlists_data)
 
+@user.route('/playlist/view/<int:playlist_id>')
+@login_required
+def view_playlist(playlist_id):
+    playlist = Playlist.query.filter((Playlist.id == playlist_id) & ((Playlist.user_id == current_user.id))).first_or_404()
+
+    songs = [
+        {
+            "id": link.song.id,
+            "title": link.song.title,
+            "artist": link.song.artist,
+            "album": link.song.album,
+            "genre": link.song.genre,
+            "release_date": link.song.release_date.isoformat() if link.song.release_date else "",
+            "audio_file": link.song.audio_file,
+            "album_cover": link.song.album_cover,
+            "online_source": link.song.online_source,
+            "preview_url": link.song.preview_url
+        } for link in playlist.songs
+    ]
+    
+    return render_template("display_playlist.html", playlist=playlist, songs=songs)
+
+@user.route('/playlists')
+@login_required
+def browse_playlists():
+    playlists = Playlist.query.all()
+    playlists_data = [{'id': p.id, 'name': p.name} for p in playlists]
+    return render_template("display_playlist.html", playlists=playlists_data)
+
 @user.route('/add_to_playlist/<int:song_id>', methods=["POST"])
 @login_required
 def add_to_playlist(song_id):
@@ -92,6 +121,27 @@ def create_playlist():
 
         return redirect(url_for("user.dashboard"))
     return render_template("create_playlist.html")
+
+@user.route('/playlist/<int:playlist_id>')
+@login_required
+def get_playlist_songs(playlist_id):
+    playlist = Playlist.query.filter_by(id=playlist_id, user_id=current_user.id).first_or_404()
+    
+    songs = [
+        {
+            "id": link.song.id,
+            "title": link.song.title,
+            "artist": link.song.artist,
+            "album": link.song.album,
+            "genre": link.song.genre,
+            "release_date": link.song.release_date.isoformat() if link.song.release_date else "",
+            "audio_file": link.song.audio_file,
+            "album_cover": link.song.album_cover,
+            "online_source": link.song.online_source,
+            "preview_url": link.song.preview_url
+        } for link in playlist.songs
+    ]
+    return jsonify(songs)
 
 
 @user.route('/play/<int:song_id>')
@@ -152,7 +202,7 @@ def get_preview(song_id):
                     preview = track.get("preview")
                     deezer_id = track.get("id")
                     song.preview_url = preview
-                    song.deezer_track_id = deezer_id  # ✅ store it
+                    song.deezer_track_id = deezer_id
                     db.session.commit()
                     return jsonify({"preview": preview, "deezer_id": deezer_id})
     except Exception as e:
