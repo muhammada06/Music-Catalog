@@ -44,6 +44,7 @@
               <a href="{{ url_for('admin.dashboard') }}" class="header-btn header-btn-green">Go to Dashboard</a>
             {% else %}
               <a href="{{ url_for('user.dashboard') }}" class="header-btn header-btn-blue">Browse Music</a>
+              <a href="{{ url_for('user.browse_playlists') }}" class="header-btn header-btn-purple">🎵 Browse Playlists</a>
             {% endif %}
           </div>
         {% else %}

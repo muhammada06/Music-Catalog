@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}User Playlist{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/user_playlist.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+  <div class="dashboard-header">
+    <h1>Music Catalog: Playlists</h1>
+    <div class="welcome">Hello, {{ current_user.username }}</div>
+  </div>
+
+  <div class="split">
+    <!-- Left: Playlists -->
+    <div class="playlist-panel">
+    <div class="playlist-list" id="playlist-list">
+        {% for playlist in playlists %}
+        <div class="playlist-item" onclick="selectPlaylist(this)"
+            data-id="{{ playlist.id }}"
+            data-title="{{ playlist.name }}">
+            <div class="s-title">{{ playlist.name }}</div>
+        </div>
+        {% else %}
+        <p class="empty-msg">No playlists available yet.</p>
+        {% endfor %}
+    </div>
+    </div>
+
+    <!-- Center: Songs -->
+    <div class="song-panel">
+    <div class="song-list" id="song-list">
+        {% for song in songs %}
+        <div class="song-item" onclick="selectSong(this)"
+            data-id="{{ song.id }}"
+            data-title="{{ song.title }}"
+            data-artist="{{ song.artist }}"
+            data-album="{{ song.album or '' }}"
+            data-genre="{{ song.genre or '' }}"
+            data-date="{{ song.release_date or '' }}"
+            data-audio="{{ song.audio_file or '' }}"
+            data-cover="{{ song.album_cover if song.album_cover and song.album_cover.startswith('http') else (url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '') }}"
+            data-online='{{ (song.online_source or "") | tojson }}'
+            data-preview='{{ (song.preview_url or "") | tojson }}'>
+            <div class="s-title">{{ song.title }}</div>
+            <div class="s-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}</div>
+        </div>
+        {% else %}
+        <p class="empty-msg">No songs available yet.</p>
+        {% endfor %}
+    </div>
+    </div>
+    <!-- Right: detail -->
+    <div class="detail-panel" id="detail-panel">
+      <div class="detail-placeholder">
+        <div style="font-size:2.5rem; margin-bottom:8px;">🎵</div>
+        Select a song to view details
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const USER_PLAYLISTS = JSON.parse('{{ playlists | tojson | safe }}');
+</script>
+
+<script>
+    function selectPlaylist(el) {
+        // highlight selected playlist
+        document.querySelectorAll('.playlist-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+
+        const id = el.dataset.id;
+
+        fetch(`/user/playlist/${id}`)
+        .then(res => res.json())
+        .then(songs => {
+            const container = document.getElementById('song-list');
+
+            // clear existing songs
+            container.innerHTML = "";
+
+            if (!songs || songs.length === 0) {
+                container.innerHTML = `<p class="empty-msg">No songs in this playlist.</p>`;
+                return;
+            }
+
+            // build each song item
+            songs.forEach(song => {
+                const div = document.createElement("div");
+                div.className = "song-item";
+
+                // attach click handler
+                div.onclick = () => selectSong(div);
+
+                // attach all data attributes
+                div.dataset.id = song.id;
+                div.dataset.title = song.title;
+                div.dataset.artist = song.artist;
+                div.dataset.album = song.album || "";
+                div.dataset.genre = song.genre || "";
+                div.dataset.date = song.release_date || "";
+                div.dataset.audio = song.audio_file || "";
+                div.dataset.cover = song.album_cover 
+                    ? (song.album_cover.startsWith("http") ? song.album_cover : `/admin/cover/${song.album_cover}`) 
+                    : "";
+                div.dataset.online = song.online_source || "";
+                div.dataset.preview = song.preview_url || "";
+
+                // inner HTML
+                div.innerHTML = `
+                    <div class="s-title">${song.title}</div>
+                    <div class="s-meta">
+                        ${song.artist}${song.album ? ` · ${song.album}` : ""}
+                    </div>
+                `;
+
+                container.appendChild(div);
+            });
+        })
+        .catch(err => {
+            console.error("Error loading playlist:", err);
+        });
+    }
+    function selectSong(el) {
+        document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'))
+        el.classList.add('active');
+        const title  = el.dataset.title;
+        const artist = el.dataset.artist;
+        const album  = el.dataset.album;
+        const genre  = el.dataset.genre;
+        const date   = el.dataset.date;
+        const audio  = el.dataset.audio;
+        const cover  = el.dataset.cover;
+        const online = el.dataset.online || "";
+        const preview = el.dataset.preview || "";
+
+        let spotifyHtml = '';
+        if (online && online.includes("spotify.com/track/")) {
+            const trackId = online.split('/track/')[1].split('?')[0];
+
+            spotifyHtml = `
+                <iframe style="border-radius:12px; margin-top:10px;"
+                src="https://open.spotify.com/embed/track/${trackId}"
+                width="100%" height="100"
+                frameBorder="0"
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+                </iframe>
+            `;
+        }
+
+        const id     = el.dataset.id;
+        const playlists = USER_PLAYLISTS;
+
+        const coverHtml = cover
+            ? `<div class="cover-area" id="cover-area"><img src="${cover}" alt="Album Cover"></div>`
+            : `<div class="cover-area" id="cover-area"><div class="detail-cover-placeholder">🎵</div></div>`;
+
+        const audioHtml = audio
+            ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
+            : '';
+
+        const previewButton = `
+            <button id="play-preview" style="display:block;margin:0 auto 16px;padding:8px 24px;background:#1f6feb;color:white;border:none;border-radius:6px;font-size:0.88rem;font-weight:600;cursor:pointer;">
+                ▶ Load Preview
+            </button>
+            <div id="preview-container"></div>
+        `;
+
+        const playlistSelectHtml = `
+            <div class="detail-row" style="display:flex; align-items:center; gap:8px;">
+                <span class="label" style="margin-right:8px;">Add to Playlist</span>
+                <select id="playlist-select" class="nav-filter-select">
+                <option value="">Select Playlist</option>
+                <option value="NEW">NEW</option>
+                ${playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                </select>
+                <button id="add-to-playlist" class="btn">Add</button>
+            </div>
+        `;
+
+        document.getElementById('detail-panel').innerHTML = `
+            ${coverHtml}
+            <div class="detail-title">${title}</div>
+            <div class="detail-artist">${artist}</div>
+            ${previewButton}
+            <div class="detail-info">
+                ${album ? `<div class="detail-row"><span class="label">Album</span><span class="value">${album}</span></div>` : ''}
+                ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
+                ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
+                ${online ? `<div class="detail-row"><span class="label">Online Source</span><span class="value">${online}</span></div>` : ''}
+                ${playlistSelectHtml}
+            </div>
+            ${spotifyHtml || audioHtml}
+        `;
+
+        const storedPreview = JSON.parse(el.dataset.preview || '""');
+
+        document.getElementById('play-preview').addEventListener('click', async () => {
+        const container = document.getElementById('preview-container');
+        if (container.dataset.loaded === 'true') return;
+
+        try {
+            const res = await fetch(`/user/preview/${id}`);
+            const data = await res.json();
+            const deezerId = data.deezer_id;
+
+            if (deezerId) {
+            //replace cover area with Deezer widget
+            const coverArea = document.getElementById('cover-area');
+            coverArea.innerHTML = `
+                <div class="deezer-widget-area">
+                <iframe
+                    title="deezer-widget"
+                    src="https://widget.deezer.com/widget/dark/track/${deezerId}"
+                    width="100%"
+                    height="280"
+                    frameborder="0"
+                    allowtransparency="true"
+                    allow="encrypted-media; clipboard-write">
+                </iframe>
+                </div>
+            `;
+
+            //hide play button
+            document.getElementById('play-preview').style.display = 'none';
+            container.dataset.loaded = 'true';
+            } else {
+            alert("No preview available for this song.");
+            }
+        } catch (err) {
+            console.error("Fetch error:", err);
+            alert("Error loading preview.");
+        }
+        });
+
+        document.getElementById('add-to-playlist').addEventListener('click', () => {
+        const select = document.getElementById('playlist-select');
+        const playlist_id = select.value;
+
+        if (!playlist_id) return alert("Select a playlist!");
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/user/add_to_playlist/${id}`;
+    
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'playlist_id';
+        input.value = playlist_id;
+        form.appendChild(input);
+
+        document.body.appendChild(form);
+        form.submit();
+        });
+    }
+</script>
+{% endblock %}
