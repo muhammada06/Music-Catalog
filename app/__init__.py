@@ -6,13 +6,18 @@ db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__)
+
     app.config.from_object('config.Config')
+
+    if test_config:
+        app.config.update(test_config)
 
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+
     login_manager.login_view = 'auth.login'
 
     @login_manager.user_loader
@@ -29,7 +34,4 @@ def create_app():
     app.register_blueprint(admin)
     app.register_blueprint(user)
 
-    with app.app_context():
-        db.create_all()
-    
     return app

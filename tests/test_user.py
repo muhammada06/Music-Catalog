@@ -1,6 +1,7 @@
 import pytest
-
-from app.models import User
+from app import db
+from app import create_app
+from app.models import User, Playlist
 
 def test_set_password():
     user = User(username="testUser")
@@ -38,3 +39,32 @@ def test_empty_password():
 
     with pytest.raises(ValueError):
         user.set_password(None)
+
+def test_signup_creates_user():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+
+        client = app.test_client()
+
+        response = client.post('/user/creation', data={
+            "username": "newuser",
+            "email": "newuser@test.com",
+            "password": "password123"
+        })
+        assert response.status_code == 302
+
+        user = User.query.filter_by(username="newuser").first()
+        assert user is not None
+        assert user.email == "newuser@test.com"
+
+        playlist = Playlist.query.filter_by(user_id=user.id).first()
+        assert playlist is not None
+        assert playlist.name == "Favorites"
+
+        db.session.remove()
+        db.drop_all()

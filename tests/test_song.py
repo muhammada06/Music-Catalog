@@ -47,6 +47,28 @@ def test_songs_are_independent():
     song2 = Song(title="test song", artist="artist2")
     assert song1.artist != song2.artist
 
+def test_set_song():
+    song = Song(
+        title="test song",
+        artist="test artist",
+        album="test album",
+        genre="rock",
+        release_date=date(2026, 1, 1),
+        audio_file="testFile.mp3",
+        album_cover="cover.jpg",
+        online_source="https://spotify.com/test",
+        user_id=1
+    )
+
+    assert song.title == "test song"
+    assert song.artist == "test artist"
+    assert song.album == "test album"
+    assert song.genre == "rock"
+    assert song.release_date == date(2026, 1, 1)
+    assert song.audio_file == "testFile.mp3"
+    assert song.album_cover == "cover.jpg"
+    assert song.online_source == "https://spotify.com/test"
+
 #checking we can edit fields
 def test_update_fields():
     song = Song(

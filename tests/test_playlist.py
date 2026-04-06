@@ -28,10 +28,6 @@ def test_playlist_song_is_linked():
     assert link.playlist == playlist
     assert link.song == song
 
-def test_playlist_name_not_empty():
-    playlist = Playlist(name="Test Playlist", user_id=1)
-    assert playlist.name != ""
-
 def test_delete_playlist():
     app = create_app()
     app.config['TESTING'] = True
@@ -43,6 +39,7 @@ def test_delete_playlist():
         user.set_password("password")
         db.session.add(user)
         db.session.commit()
+
         playlist = Playlist(name="My Playlist", user_id=user.id)
         db.session.add(playlist)
         db.session.commit()
@@ -54,4 +51,42 @@ def test_delete_playlist():
 
         assert Playlist.query.count() == 0
 
+        db.session.remove()
+        db.drop_all()
+
+def test_playlist_name_not_empty():
+    playlist = Playlist(name="Test Playlist", user_id=1)
+    assert playlist.name != ""
+
+def test_delete_playlist():
+    import uuid
+
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+
+        user = User(
+            username=f"user_{uuid.uuid4()}",
+            email=f"{uuid.uuid4()}@test.com" 
+        )
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+
+        playlist = Playlist(name="My Playlist", user_id=user.id)
+        db.session.add(playlist)
+        db.session.commit()
+
+        assert Playlist.query.count() == 1
+
+        db.session.delete(playlist)
+        db.session.commit()
+
+        assert Playlist.query.count() == 0
+
+        db.session.remove()
         db.drop_all()
