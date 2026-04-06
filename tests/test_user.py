@@ -1,8 +1,9 @@
 import pytest
 from werkzeug.test import TestResponse
+from unittest.mock import patch, MagicMock
 from app import db
 from app import create_app
-from app.models import User, Playlist
+from app.models import User, Playlist, Song, linkPlaylistSong
 
 def test_set_password():
     user = User(username="testUser")
@@ -98,11 +99,63 @@ def test_signup_duplicate_username():
             "password": "password123"
         })
 
-        # still redirects (expected)
+        #check that it redirects
         assert response.status_code == 302
 
-        # BUT only one user should exist
         assert User.query.filter_by(username="duplicate").count() == 1
+
+        db.session.remove()
+        db.drop_all()
+
+def test_signup_valid_email():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        client.post('/user/creation', data={
+            "username": "emailuser",
+            "email": "valid@test.com",
+            "password": "password123"
+        })
+
+        user = User.query.filter_by(username="emailuser").first()
+
+        assert user is not None
+        assert user.email == "valid@test.com"
+
+        db.session.remove()
+        db.drop_all()
+
+def test_signup_duplicate_email():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #first user
+        client.post('/user/creation', data={
+            "username": "user1",
+            "email": "same@test.com",
+            "password": "password123"
+        })
+
+        #second user with same email
+        client.post('/user/creation', data={
+            "username": "user2",
+            "email": "same@test.com",
+            "password": "password123"
+        })
+
+        assert User.query.filter_by(email="same@test.com").count() == 1
 
         db.session.remove()
         db.drop_all()
@@ -137,3 +190,52 @@ def test_reset_password():
 
         assert updated_user.check_password("newPassword") == True
         assert updated_user.check_password("oldPassword") == False
+
+def test_forgot_password_sends_email():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create user
+        user = User(username="testuser", email="test@test.com")
+        user.set_password("password123")
+        db.session.add(user)
+        db.session.commit()
+
+        #mock smtp
+        with patch("smtplib.SMTP") as mock_smtp:
+            mock_server = MagicMock()
+            mock_smtp.return_value.__enter__.return_value = mock_server
+
+            response = client.post('/forgot', data={
+                "username": "testuser"
+            })
+
+            assert mock_server.send_message.called
+
+            assert mock_server.starttls.called
+            assert mock_server.login.called
+
+def test_forgot_password_user_not_found():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        with patch("smtplib.SMTP") as mock_smtp:
+            response = client.post('/forgot', data={
+                "username": "doesnotexist"
+            })
+
+            mock_smtp.assert_not_called()
