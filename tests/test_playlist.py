@@ -282,8 +282,8 @@ def test_favorites_duplicates():
 
             #add twice
             client.post(f'/user/toggle_favorite/{song.id}')
-            client.post(f'/user/toggle_favorite/{song.id}')  # removes
-            client.post(f'/user/toggle_favorite/{song.id}')  # adds again
+            client.post(f'/user/toggle_favorite/{song.id}')
+            client.post(f'/user/toggle_favorite/{song.id}')
 
             fav = Playlist.query.filter_by(name="Favorites", user_id=user.id).first()
 
@@ -293,3 +293,40 @@ def test_favorites_duplicates():
             ).all()
 
             assert len(links) == 1
+
+def test_playlist_created_empty():
+    playlist = Playlist(name="Empty Playlist", user_id=1)
+    # assuming relationship exists
+    assert len(getattr(playlist, "songs", [])) == 0
+
+
+def test_link_playlist_song_persisted():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+
+        playlist = Playlist(name="Persist Playlist", user_id=user.id)
+        song = Song(title="Song", artist="Artist")
+
+        db.session.add_all([playlist, song])
+        db.session.commit()
+
+        link = linkPlaylistSong(playlist_id=playlist.id, song_id=song.id)
+        db.session.add(link)
+        db.session.commit()
+
+        fetched = linkPlaylistSong.query.filter_by(
+            playlist_id=playlist.id,
+            song_id=song.id
+        ).first()
+
+        assert fetched is not None
