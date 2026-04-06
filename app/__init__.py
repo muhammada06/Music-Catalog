@@ -34,4 +34,8 @@ def create_app(test_config=None):
     app.register_blueprint(admin)
     app.register_blueprint(user)
 
+    with app.app_context():
+        from flask_migrate import upgrade
+        upgrade()
+
     return app
