@@ -36,6 +36,7 @@ def create_app(test_config=None):
 
     with app.app_context():
         from flask_migrate import upgrade
-        upgrade()
+        if not app.config.get("TESTING"):
+            upgrade()
 
     return app
