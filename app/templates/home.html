@@ -119,6 +119,7 @@
 <script>
 const SONGS    = {{ songs_data | tojson }};
 const IS_AUTH  = {{ current_user.is_authenticated | tojson }};
+const IS_ADMIN = {{ (current_user.is_authenticated and current_user.is_admin) | tojson }};
 const FAV_IDS  = new Set({{ favorite_ids | tojson }});
 const PLAYLISTS = {{ playlists_data | tojson }};
 {% if current_user.is_authenticated %}
@@ -181,7 +182,8 @@ function buildCard(song) {
     coverDiv.appendChild(ov);
   }
 
-  // Heart / favorite button
+  // Heart / favorite button (not for admins)
+  if (!IS_ADMIN) {
   const heart = document.createElement('button');
   heart.className = 'heart-btn' + (FAV_IDS.has(song.id) ? ' heart-active' : '');
   heart.innerHTML = FAV_IDS.has(song.id) ? '♥' : '♡';
@@ -200,9 +202,10 @@ function buildCard(song) {
     heart.style.cursor = 'default';
   }
   coverDiv.appendChild(heart);
+  } // end !IS_ADMIN (heart)
 
-  // 3-dot "add to playlist" menu (auth only)
-  if (IS_AUTH) {
+  // 3-dot "add to playlist" menu (auth, non-admin only)
+  if (IS_AUTH && !IS_ADMIN) {
     const menuBtn = document.createElement('button');
     menuBtn.className = 'song-card-menu-btn';
     menuBtn.innerHTML = '⋯';
