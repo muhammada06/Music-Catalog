@@ -1,6 +1,7 @@
 import pytest
 from datetime import date
 from app.models import Playlist, Song, User, linkPlaylistSong
+from unittest.mock import patch, MagicMock
 from app import db, create_app
 import os
 
@@ -146,3 +147,74 @@ def test_play_audio():
 
             assert response.status_code == 200
             assert response.data is not None
+
+def test_preview_url():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create user
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+
+        #create song 
+        song = Song(title="Song", artist="Artist", preview_url="http://fake-url")
+        db.session.add(song)
+        db.session.commit()
+
+        #mock request
+        with patch("requests.get") as mock_get:
+            mock_response = MagicMock()
+            mock_response.iter_content = lambda chunk_size: [b"audio", b"data"]
+            mock_response.headers = {"Content-Type": "audio/mpeg"}
+            mock_response.raise_for_status = lambda: None
+
+            mock_get.return_value = mock_response
+
+            with client:
+                client.post('/login', data={
+                    "username": "user",
+                    "password": "password"
+                })
+
+                response = client.get(f'/user/preview/stream/{song.id}')
+
+                assert response.status_code == 200
+                assert response.data is not None
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_no_preview_url():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+
+        song = Song(title="Song", artist="Artist", preview_url=None)
+        db.session.add(song)
+        db.session.commit()
+
+        with client:
+            client.post('/login', data={
+                "username": "user",
+                "password": "password"
+            })
+
+            response = client.get(f'/user/preview/stream/{song.id}')
+
+            assert response.status_code == 404
