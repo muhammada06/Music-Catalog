@@ -79,3 +79,108 @@ def test_admin_cannot_delete_self():
 
         db.session.remove()
         db.drop_all()
+
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_admin_toggle_admin_role():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        admin_user = User(username="admin", email="admin@test.com")
+        admin_user.set_password("password")
+        admin_user.set_is_admin()
+
+        normal_user = User(username="user", email="user@test.com")
+        normal_user.set_password("password")
+
+        db.session.add_all([admin_user, normal_user])
+        db.session.commit()
+
+        with client.session_transaction() as session:
+            session["_user_id"] = str(admin_user.id)
+
+        response = client.post(f"/admin/toggle_admin/{normal_user.id}")
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["is_admin"] is True
+
+        updated_user = db.session.get(User, normal_user.id)
+        assert updated_user.is_admin is True
+
+        db.session.remove()
+        db.drop_all()
+
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_admin_cannot_block_self():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        admin_user = User(username="admin", email="admin@test.com")
+        admin_user.set_password("password")
+        admin_user.set_is_admin()
+
+        db.session.add(admin_user)
+        db.session.commit()
+
+        with client.session_transaction() as session:
+            session["_user_id"] = str(admin_user.id)
+
+        response = client.post(f"/admin/toggle_block/{admin_user.id}")
+
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["error"] == "Cannot block yourself"
+
+        db.session.remove()
+        db.drop_all()
+
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_admin_delete_user_success():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        admin_user = User(username="admin", email="admin@test.com")
+        admin_user.set_password("password")
+        admin_user.set_is_admin()
+
+        normal_user = User(username="user", email="user@test.com")
+        normal_user.set_password("password")
+
+        db.session.add_all([admin_user, normal_user])
+        db.session.commit()
+
+        with client.session_transaction() as session:
+            session["_user_id"] = str(admin_user.id)
+
+        response = client.post(f"/admin/delete_user/{normal_user.id}")
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["deleted"] is True
+
+        deleted_user = db.session.get(User, normal_user.id)
+        assert deleted_user is None
+
+        db.session.remove()
+        db.drop_all()
