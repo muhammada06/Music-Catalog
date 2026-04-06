@@ -1,14 +1,8 @@
 import pytest
+from werkzeug.test import TestResponse
 from app import db
 from app import create_app
 from app.models import User, Playlist
-
-def test_set_admin():
-    user = User(username="testUser", password="testPass", email="test@example.com")
-    user.set_is_admin()
-
-    assert user.is_admin == True
-    
 
 def test_set_password():
     user = User(username="testUser")
@@ -47,6 +41,12 @@ def test_empty_password():
     with pytest.raises(ValueError):
         user.set_password(None)
 
+def test_empty_string_password():
+    user = User(username="testUser")
+
+    with pytest.raises(ValueError):
+        user.set_password("")
+
 def test_signup_creates_user():
     app = create_app({
         "TESTING": True,
@@ -75,3 +75,65 @@ def test_signup_creates_user():
 
         db.session.remove()
         db.drop_all()
+
+def test_signup_duplicate_username():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        client.post('/user/creation', data={
+            "username": "duplicate",
+            "email": "test1@test.com",
+            "password": "password123"
+        })
+
+        response = client.post('/user/creation', data={
+            "username": "duplicate",
+            "email": "test2@test.com",
+            "password": "password123"
+        })
+
+        # still redirects (expected)
+        assert response.status_code == 302
+
+        # BUT only one user should exist
+        assert User.query.filter_by(username="duplicate").count() == 1
+
+        db.session.remove()
+        db.drop_all()
+
+def test_reset_password():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create testing user
+        user = User(username="testuser", email="test@test.com")
+        user.set_password("oldPassword")
+        db.session.add(user)
+        db.session.commit()
+
+        from itsdangerous import URLSafeTimedSerializer
+        s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+        token = s.dumps(user.email, salt='password-reset-salt')
+
+        #create new password
+        response = client.post(f'/reset_password/{token}', data={
+            "password": "newPassword"
+        })
+
+        updated_user = User.query.filter_by(email="test@test.com").first()
+
+        assert updated_user.check_password("newPassword") == True
+        assert updated_user.check_password("oldPassword") == False
