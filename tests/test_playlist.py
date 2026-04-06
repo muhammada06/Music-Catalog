@@ -374,3 +374,43 @@ def test_private_playlist_is_hidden():
             response = client.get(f'/user/playlist/view/{private_playlist.id}')
 
             assert response.status_code == 404
+
+def test_public_playlist_visible():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        user1 = User(username="user1", email="user1@test.com")
+        user1.set_password("password")
+        db.session.add(user1)
+        db.session.commit()
+
+        #create public playlist
+        public_playlist = Playlist(
+            name="Public Playlist",
+            user_id=user1.id,
+            is_public=True
+        )
+        db.session.add(public_playlist)
+        db.session.commit()
+
+        user2 = User(username="user2", email="user2@test.com")
+        user2.set_password("password")
+        db.session.add(user2)
+        db.session.commit()
+
+        with client:
+            client.post('/login', data={
+                "username": "user2",
+                "password": "password"
+            }, follow_redirects=True)
+
+            response = client.get(f'/user/playlist/view/{public_playlist.id}')
+
+            assert response.status_code == 200
