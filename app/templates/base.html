@@ -17,7 +17,7 @@
       {% if current_user.is_authenticated %}
         {% if request.endpoint not in ('admin.home', 'admin.dashboard', 'user.browse_playlists') %}
           {% if current_user.is_admin %}
-            <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('admin.home') }}">Admin Home</a>
           {% else %}
             <a href="{{ url_for('user.browse_playlists') }}">My Playlists</a>
           {% endif %}
