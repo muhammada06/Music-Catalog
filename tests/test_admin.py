@@ -395,3 +395,27 @@ def test_admin_edit_song():
 
         db.session.remove()
         db.drop_all()
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_user_email_stored_correctly():
+    """Email is stored exactly as provided."""
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+
+        user = User(username="test", email="test@example.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+
+        fetched = User.query.filter_by(username="test").first()
+
+        assert fetched is not None
+        assert fetched.email == "test@example.com"
+
+        db.session.remove()
+        db.drop_all()
