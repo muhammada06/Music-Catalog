@@ -330,3 +330,47 @@ def test_link_playlist_song_persisted():
         ).first()
 
         assert fetched is not None
+
+def test_private_playlist_is_hidden():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create first user
+        user1 = User(username="user1", email="user1@test.com")
+        user1.set_password("password")
+        db.session.add(user1)
+        db.session.commit()
+
+        #private playlist for first user
+        private_playlist = Playlist(
+            name="Private Playlist",
+            user_id=user1.id,
+            is_public=False
+        )
+        db.session.add(private_playlist)
+        db.session.commit()
+
+        #create second user
+        user2 = User(username="user2", email="user2@test.com")
+        user2.set_password("password")
+        db.session.add(user2)
+        db.session.commit()
+
+        with client:
+            #login as second user
+            client.post('/login', data={
+                "username": "user2",
+                "password": "password"
+            }, follow_redirects=True)
+
+            #try to view first user's private playlist
+            response = client.get(f'/user/playlist/view/{private_playlist.id}')
+
+            assert response.status_code == 404
