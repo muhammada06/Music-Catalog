@@ -185,6 +185,7 @@ def test_admin_delete_user_success():
         db.session.remove()
         db.drop_all()
 
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
 def test_admin_can_view_song():
     app = create_app({
         "TESTING": True,
@@ -218,6 +219,7 @@ def test_admin_can_view_song():
             assert response.status_code == 200
             assert b"Test Song" in response.data
 
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
 def test_delete_song():
     app = create_app({
         "TESTING": True,
