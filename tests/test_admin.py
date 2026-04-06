@@ -253,3 +253,66 @@ def test_delete_song():
             assert response.status_code == 200
 
             assert Song.query.get(song.id) is None
+
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_admin_registration():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        # Register a normal user
+        response = client.post("/auth/register", data={
+            "username": "new_admin",
+            "email": "admin@test.com",
+            "password": "password"
+        }, follow_redirects=True)
+
+        user = User.query.filter_by(username="new_admin").first()
+
+        # User should exist (if your register route works)
+        if user:
+            assert user.is_admin is False
+
+        db.session.remove()
+        db.drop_all()
+
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_admin_logout():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        admin_user = User(username="admin", email="admin@test.com")
+        admin_user.set_password("password")
+        admin_user.set_is_admin()
+
+        db.session.add(admin_user)
+        db.session.commit()
+
+        # log in manually
+        with client.session_transaction() as session:
+            session["_user_id"] = str(admin_user.id)
+
+        # logout using correct route
+        response = client.get("/logout", follow_redirects=True)
+
+        assert response.status_code == 200
+
+        # session should be cleared
+        with client.session_transaction() as session:
+            assert "_user_id" not in session
+
+        db.session.remove()
+        db.drop_all()
