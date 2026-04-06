@@ -1,5 +1,8 @@
-from app.models import Song
+import pytest
 from datetime import date
+from app.models import Playlist, Song, User, linkPlaylistSong
+from app import db, create_app
+import os
 
 # checking that songs are created and info is saved correctly
 def test_set_song():
@@ -101,3 +104,45 @@ def test_update_fields():
     assert song.audio_file == "newFile.mp3"
     assert song.album_cover == "newCover.jpg"
     assert song.online_source == "https://youtube.com/test"
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_play_audio():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create user
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+
+        #create fake audio directory + file
+        audio_dir = os.path.join("instance", "demo_song")
+        os.makedirs(audio_dir, exist_ok=True)
+
+        file_path = os.path.join(audio_dir, "test.mp3")
+        with open(file_path, "wb") as f:
+            f.write(b"fake audio content")
+
+        #create a song pointing to file
+        song = Song(title="Song", artist="Artist", audio_file="test.mp3")
+        db.session.add(song)
+        db.session.commit()
+
+        with client:
+            client.post('/login', data={
+                "username": "user",
+                "password": "password"
+            })
+
+            response = client.get(f'/user/play/{song.id}')
+
+            assert response.status_code == 200
+            assert response.data is not None
