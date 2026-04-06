@@ -265,3 +265,4 @@ def test_login_success():
 
         #check redirecting
         assert response.status_code == 200
+

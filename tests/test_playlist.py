@@ -1,3 +1,5 @@
+import pytest
+
 from app.models import Playlist, Song, User, linkPlaylistSong
 from app import db, create_app
 from flask_login import login_user
@@ -125,3 +127,169 @@ def test_toggle_playlist_privacy():
 
         db.session.remove()
         db.drop_all()
+
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_favorites_playlist_created():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+
+        song = Song(title="Song", artist="Artist")
+        db.session.add(song)
+        db.session.commit()
+
+        with client:
+            client.post('/login', data={
+                "username": "user",
+                "password": "password"
+            })
+
+            client.post(f'/user/toggle_favorite/{song.id}')
+
+            fav = Playlist.query.filter_by(name="Favorites", user_id=user.id).first()
+            assert fav is not None
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_add_to_favorites():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create user
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+
+        #create song
+        song = Song(title="Fav Song", artist="Artist")
+        db.session.add(song)
+        db.session.commit()
+
+        with client:
+            client.post('/login', data={
+                "username": "user",
+                "password": "password"
+            }, follow_redirects=True)
+
+            #add to favorites
+            response = client.post(f'/user/toggle_favorite/{song.id}')
+            assert response.status_code == 200
+
+            #check playlist exists
+            fav = Playlist.query.filter_by(name="Favorites", user_id=user.id).first()
+            assert fav is not None
+
+            #check song is added
+            link = linkPlaylistSong.query.filter_by(
+                playlist_id=fav.id,
+                song_id=song.id
+            ).first()
+
+            assert link is not None
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_remove_from_favorites():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create user
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+
+        #create song
+        song = Song(title="Fav Song", artist="Artist")
+        db.session.add(song)
+        db.session.commit()
+
+        #add to favorites first
+        fav = Playlist(name="Favorites", user_id=user.id)
+        db.session.add(fav)
+        db.session.flush()
+
+        link = linkPlaylistSong(playlist_id=fav.id, song_id=song.id)
+        db.session.add(link)
+        db.session.commit()
+
+        with client:
+            client.post('/login', data={
+                "username": "user",
+                "password": "password"
+            }, follow_redirects=True)
+
+            #remove from favorites
+            response = client.post(f'/user/toggle_favorite/{song.id}')
+            assert response.status_code == 200
+
+            #check removed
+            link = linkPlaylistSong.query.filter_by(
+                playlist_id=fav.id,
+                song_id=song.id
+            ).first()
+
+            assert link is None
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_favorites_duplicates():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+
+        song = Song(title="Song", artist="Artist")
+        db.session.add(song)
+        db.session.commit()
+
+        with client:
+            client.post('/login', data={
+                "username": "user",
+                "password": "password"
+            })
+
+            #add twice
+            client.post(f'/user/toggle_favorite/{song.id}')
+            client.post(f'/user/toggle_favorite/{song.id}')  # removes
+            client.post(f'/user/toggle_favorite/{song.id}')  # adds again
+
+            fav = Playlist.query.filter_by(name="Favorites", user_id=user.id).first()
+
+            links = linkPlaylistSong.query.filter_by(
+                playlist_id=fav.id,
+                song_id=song.id
+            ).all()
+
+            assert len(links) == 1
