@@ -1,6 +1,6 @@
 import pytest
 from app import db, create_app
-from app.models import User
+from app.models import User, Song
 
 
 @pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
@@ -184,3 +184,73 @@ def test_admin_delete_user_success():
 
         db.session.remove()
         db.drop_all()
+
+def test_admin_can_view_song():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create admin
+        admin = User(username="admin", email="admin@test.com", is_admin=True)
+        admin.set_password("adminpass")
+        db.session.add(admin)
+
+        #create song
+        song = Song(title="Test Song", artist="Test Artist")
+        db.session.add(song)
+        db.session.commit()
+
+        #login admin
+        with client:
+            client.post('/login', data={
+                "username": "admin",
+                "password": "adminpass"
+            }, follow_redirects=True)
+
+            response = client.get('/admin/dashboard')
+
+            assert response.status_code == 200
+            assert b"Test Song" in response.data
+
+def test_delete_song():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create admin
+        admin = User(username="admin", email="admin@test.com", is_admin=True)
+        admin.set_password("adminpass")
+        db.session.add(admin)
+
+        #create song
+        song = Song(title="Delete Me", artist="Artist")
+        db.session.add(song)
+        db.session.commit()
+
+        with client:
+            #login
+            client.post('/login', data={
+                "username": "admin",
+                "password": "adminpass"
+            }, follow_redirects=True)
+
+            #delete song
+            response = client.post(f'/admin/delete/{song.id}', follow_redirects=True)
+
+            assert response.status_code == 200
+
+            #check database
+            deleted = Song.query.get(song.id)
+            assert deleted is None

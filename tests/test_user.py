@@ -239,3 +239,29 @@ def test_forgot_password_user_not_found():
             })
 
             mock_smtp.assert_not_called()
+
+def test_login_success():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create user
+        user = User(username="testuser", email="test@test.com")
+        user.set_password("password123")
+        db.session.add(user)
+        db.session.commit()
+
+        #login
+        response = client.post('/login', data={
+            "username": "testuser",
+            "password": "password123"
+        }, follow_redirects=True)
+
+        #check redirecting
+        assert response.status_code == 200
