@@ -17,6 +17,58 @@ def test_same_playlist_name():
     assert p1.name == p2.name
     assert p1.user_id != p2.user_id
 
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_add_song_duplicate():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create user
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+        db.session.commit()
+
+        #create song
+        song = Song(title="Song", artist="Artist")
+        db.session.add(song)
+        db.session.commit()
+
+        #create playlist
+        playlist = Playlist(name="My Playlist", user_id=user.id)
+        db.session.add(playlist)
+        db.session.commit()
+
+        with client:
+            #login
+            client.post('/login', data={
+                "username": "user",
+                "password": "password"
+            }, follow_redirects=True)
+
+            #add song first
+            client.post(f'/user/add_to_playlist/{song.id}', data={
+                "playlist_id": playlist.id
+            })
+
+            #add song again
+            client.post(f'/user/add_to_playlist/{song.id}', data={
+                "playlist_id": playlist.id
+            })
+
+            links = linkPlaylistSong.query.filter_by(
+                playlist_id=playlist.id,
+                song_id=song.id
+            ).all()
+
+            assert len(links) == 1
+
 def test_link_playlist_song():
     playlist = Playlist(id=1, name="My Playlist", user_id=1)
     song = Song(id=1, title="Song1", artist="Artist1")
