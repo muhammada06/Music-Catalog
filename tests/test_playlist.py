@@ -1,5 +1,6 @@
 from app.models import Playlist, Song, User, linkPlaylistSong
 from app import db, create_app
+from flask_login import login_user
 
 #tdd
 def test_create_playlist():
@@ -87,6 +88,40 @@ def test_delete_playlist():
         db.session.commit()
 
         assert Playlist.query.count() == 0
+
+        db.session.remove()
+        db.drop_all()
+
+def test_toggle_playlist_privacy():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
+    })
+
+    with app.app_context():
+        db.create_all()
+
+        test_user = User(username="testuser", email="test@test.com")
+        test_user.set_password("password")
+        db.session.add(test_user)
+        db.session.commit()
+
+        test_playlist = Playlist(name="Test Playlist", user_id=test_user.id, is_public=False)
+        db.session.add(test_playlist)
+        db.session.commit()
+
+        with app.test_request_context():
+            login_user(test_user)
+
+            test_playlist.is_public = not test_playlist.is_public
+            db.session.commit()
+            playlist = db.session.get(Playlist, test_playlist.id)
+            assert playlist.is_public is True
+
+            test_playlist.is_public = not test_playlist.is_public
+            db.session.commit()
+            playlist = db.session.get(Playlist, test_playlist.id)
+            assert playlist.is_public is False       
 
         db.session.remove()
         db.drop_all()

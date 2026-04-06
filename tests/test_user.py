@@ -3,6 +3,13 @@ from app import db
 from app import create_app
 from app.models import User, Playlist
 
+def test_set_admin():
+    user = User(username="testUser", password="testPass", email="test@example.com")
+    user.set_is_admin()
+
+    assert user.is_admin == True
+    
+
 def test_set_password():
     user = User(username="testUser")
     user.set_password("myPassword")
