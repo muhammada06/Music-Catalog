@@ -318,3 +318,80 @@ def test_admin_logout():
 
         db.session.remove()
         db.drop_all()
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_admin_add_song():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #Create admin
+        admin = User(username="admin", email="admin@test.com", is_admin=True)
+        admin.set_password("adminpass")
+        db.session.add(admin)
+        db.session.commit()
+
+        with client.session_transaction() as session:
+            session["_user_id"] = str(admin.id)
+
+        #Add song
+        response = client.post('/admin/add', data={
+            "title": "New Song",
+            "artist": "New Artist"
+        }, follow_redirects=True)
+
+        assert response.status_code == 200
+
+        song = Song.query.filter_by(title="New Song").first()
+        assert song is not None
+        assert song.artist == "New Artist"
+
+        db.session.remove()
+        db.drop_all()
+
+
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_admin_edit_song():
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #Create admin
+        admin = User(username="admin", email="admin@test.com", is_admin=True)
+        admin.set_password("adminpass")
+        db.session.add(admin)
+
+        #Create song
+        song = Song(title="Old Title", artist="Old Artist")
+        db.session.add(song)
+        db.session.commit()
+
+        with client.session_transaction() as session:
+            session["_user_id"] = str(admin.id)
+
+        #Editing song
+        response = client.post(f'/admin/edit/{song.id}', data={
+            "title": "Updated Title",
+            "artist": "Updated Artist"
+        }, follow_redirects=True)
+
+        assert response.status_code == 200
+
+        updated_song = db.session.get(Song, song.id)
+        assert updated_song.title == "Updated Title"
+        assert updated_song.artist == "Updated Artist"
+
+        db.session.remove()
+        db.drop_all()
