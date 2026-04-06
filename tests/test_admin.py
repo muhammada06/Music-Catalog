@@ -229,10 +229,11 @@ def test_delete_song():
         db.create_all()
         client = app.test_client()
 
-        #create admin
+        #screate admin
         admin = User(username="admin", email="admin@test.com", is_admin=True)
         admin.set_password("adminpass")
         db.session.add(admin)
+        db.session.commit()  
 
         #create song
         song = Song(title="Delete Me", artist="Artist")
@@ -251,6 +252,4 @@ def test_delete_song():
 
             assert response.status_code == 200
 
-            #check database
-            deleted = Song.query.get(song.id)
-            assert deleted is None
+            assert Song.query.get(song.id) is None
