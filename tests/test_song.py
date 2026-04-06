@@ -148,6 +148,7 @@ def test_play_audio():
             assert response.status_code == 200
             assert response.data is not None
 
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
 def test_preview_url():
     app = create_app({
         "TESTING": True,
