@@ -1,3 +1,6 @@
+/* ── Three-Column Split Layout (display_playlist.html) ──
+   height accounts for the navbar (62px) and the dashboard header row (68px).
+   Columns handle their own vertical scroll so the page itself doesn't scroll. */
 .split {
   display: flex;
   gap: 20px;
@@ -6,6 +9,7 @@
   overflow: hidden;
 }
 
+/* ── Left Panel: Playlist List ── */
 .playlist-panel {
   width: 240px;
   flex-shrink: 0;
@@ -23,6 +27,7 @@
   min-height: 0;
 }
 
+/* ── Playlist Item ── */
 .playlist-item {
   background: #161b22;
   border: 1px solid #21262d;
@@ -32,16 +37,10 @@
   transition: border-color 0.15s, background 0.15s;
 }
 
-.playlist-item:hover {
-  background: #1c2128;
-  border-color: #388bfd;
-}
+.playlist-item:hover  { background: #1c2128; border-color: #388bfd; }
+.playlist-item.active { border-color: #58a6ff; background: #1c2128; }
 
-.playlist-item.active {
-  border-color: #58a6ff;
-  background: #1c2128;
-}
-
+/* Row layout: title on the left, action buttons on the right */
 .playlist-item-row {
   display: flex;
   align-items: center;
@@ -49,6 +48,7 @@
   gap: 6px;
 }
 
+/* Title truncates with ellipsis when too long */
 .playlist-item .s-title {
   font-weight: 700;
   font-size: 0.95rem;
@@ -60,6 +60,8 @@
   white-space: nowrap;
 }
 
+/* ── Playlist Action Buttons (Rename, Delete, Privacy Toggle) ──
+   Hidden by default; revealed on row hover to keep the UI clean. */
 .playlist-edit-btn,
 .playlist-delete-btn,
 .playlist-public-btn {
@@ -67,23 +69,27 @@
   border: none;
   cursor: pointer;
   font-size: 0.8rem;
-  opacity: 0;
+  opacity: 0;               /* Hidden until the row is hovered */
   flex-shrink: 0;
   padding: 2px 4px;
   border-radius: 4px;
   transition: opacity 0.15s, background 0.15s;
 }
+
 .playlist-item:hover .playlist-edit-btn,
 .playlist-item:hover .playlist-delete-btn,
 .playlist-item:hover .playlist-public-btn { opacity: 1; }
-.playlist-edit-btn:hover { background: #30363d; }
-.playlist-delete-btn:hover { background: #3d1a1a; }
+
+.playlist-edit-btn:hover   { background: #30363d; }
+.playlist-delete-btn:hover { background: #3d1a1a; }  /* Subtle red tint for destructive action */
 .playlist-public-btn:hover { background: #30363d; }
 
+/* ── Inline Rename Input ──
+   Replaces the title text element during an active rename operation. */
 .playlist-rename-input {
   flex: 1;
   background: #0d1117;
-  border: 1px solid #58a6ff;
+  border: 1px solid #58a6ff;  /* Blue border signals "editing" state */
   border-radius: 4px;
   padding: 2px 6px;
   font-size: 0.95rem;
@@ -93,13 +99,15 @@
   width: 100%;
 }
 
+/* ── Center Panel: Song List ──
+   Wider than the left panel to show more song metadata. */
 .song-panel {
   width: 700px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: #2a2f36;
+  background: #2a2f36;  /* Slightly lighter background to distinguish from panels */
   border-radius: 10px;
   padding: 12px;
   overflow-y: auto;
@@ -112,6 +120,7 @@
   min-height: 0;
 }
 
+/* ── Individual Song Item ── */
 .song-item {
   background: #161b22;
   border: 1px solid #21262d;
@@ -121,28 +130,14 @@
   transition: border-color 0.15s, background 0.15s;
 }
 
-.song-item:hover {
-  background: #1c2128;
-  border-color: #388bfd;
-}
+.song-item:hover  { background: #1c2128; border-color: #388bfd; }
+.song-item.active { border-color: #58a6ff; background: #1c2128; }
 
-.song-item.active {
-  border-color: #58a6ff;
-  background: #1c2128;
-}
+.song-item .s-title { font-weight: 700; font-size: 0.95rem; color: #e6edf3; }
+.song-item .s-meta  { font-size: 0.8rem; color: #8b949e; margin-top: 2px; }
 
-.song-item .s-title {
-  font-weight: 700;
-  font-size: 0.95rem;
-  color: #e6edf3;
-}
-
-.song-item .s-meta {
-  font-size: 0.8rem;
-  color: #8b949e;
-  margin-top: 2px;
-}
-
+/* ── Right Panel: Song Detail View ──
+   flex: 1 so it expands to fill the remaining width after the two fixed panels. */
 .detail-panel {
   flex: 1;
   display: flex;
@@ -150,13 +145,13 @@
   align-items: center;
   justify-content: flex-start;
   overflow-y: auto;
-
   padding: 28px;
   border-radius: 10px;
   border: 1px solid #21262d;
   background: #161b22;
 }
 
+/* Shown before any song is selected */
 .detail-placeholder {
   margin: auto;
   font-size: 0.95rem;
@@ -164,6 +159,9 @@
   text-align: center;
 }
 
+/* ── Album Cover ──
+   Larger (400 × 400px) than the admin/user dashboard covers for a more
+   immersive listening experience in the playlist view. */
 .cover-area {
   width: 400px;
   margin-bottom: 20px;
@@ -177,6 +175,7 @@
   background: #21262d;
 }
 
+/* ── Song Detail Text ── */
 .detail-title {
   font-size: 1.4rem;
   font-weight: 700;
@@ -192,6 +191,7 @@
   text-align: center;
 }
 
+/* ── Metadata Rows ── */
 .detail-info {
   width: 100%;
   max-width: 420px;
@@ -209,15 +209,8 @@
   padding-bottom: 6px;
 }
 
-.detail-row .label {
-  color: #8b949e;
-}
-
-.detail-row .value {
-  color: #e6edf3;
-  font-weight: 600;
-  text-align: right;
-}
+.detail-row .label { color: #8b949e; }
+.detail-row .value { color: #e6edf3; font-weight: 600; text-align: right; }
 
 .detail-actions {
   display: flex;
@@ -226,6 +219,8 @@
   padding-top: 16px;
 }
 
+/* ── Custom Scrollbars ──
+   Narrow (6px) thumb-only scrollbars for the three panels to reduce visual clutter. */
 .song-panel::-webkit-scrollbar,
 .playlist-panel::-webkit-scrollbar,
 .detail-panel::-webkit-scrollbar {

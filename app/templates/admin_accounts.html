@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+<!-- admin_accounts.html — lists all registered accounts with inline AJAX actions.
+     Admins can block/unblock, promote/demote, and delete users without page reloads.
+     All three actions call dedicated /admin/* JSON endpoints. -->
 
 {% block title %}Account Management{% endblock %}
 
@@ -8,12 +11,15 @@
 
 {% block content %}
 <div class="admin-home">
+
+  <!-- ── Page Header ── -->
   <div class="admin-home-header">
     <div class="admin-home-badge">Account Management</div>
     <h1>All Accounts</h1>
     <p>{{ users|length }} account{{ 's' if users|length != 1 else '' }} registered</p>
   </div>
 
+  <!-- ── Accounts Table ── -->
   <div class="accounts-table-wrap">
     <table class="accounts-table">
       <thead>
@@ -28,40 +34,48 @@
       </thead>
       <tbody>
         {% for u in users %}
+        <!-- row-blocked CSS class dims the row visually when a user is blocked -->
         <tr id="row-{{ u.id }}" class="{% if u.is_blocked %}row-blocked{% endif %}">
           <td class="td-id">{{ u.id }}</td>
           <td class="td-username">
             {{ u.username }}
+            <!-- Highlight the currently logged-in admin's own row -->
             {% if u.id == current_user.id %}<span class="you-badge">you</span>{% endif %}
           </td>
           <td class="td-email">{{ u.email or '—' }}</td>
           <td class="td-role">
+            <!-- Role badge updated in-place by toggleAdmin() -->
             <span class="role-badge {% if u.is_admin %}role-admin{% else %}role-user{% endif %}" id="role-{{ u.id }}">
-              {{ 'Admin' if u.is_admin else 'User' }}
+              {{ 'Admin' if u.is_admin else 'Admin' if u.is_admin else 'User' }}
             </span>
           </td>
           <td class="td-status">
+            <!-- Status badge updated in-place by toggleBlock() -->
             <span class="status-badge {% if u.is_blocked %}status-blocked{% else %}status-active{% endif %}" id="status-{{ u.id }}">
               {{ 'Blocked' if u.is_blocked else 'Active' }}
             </span>
           </td>
           <td class="td-actions">
             {% if u.id != current_user.id %}
+            <!-- Block / Unblock button — label and icon toggle based on current state -->
             <button class="act-btn act-block" id="block-btn-{{ u.id }}"
               onclick="toggleBlock({{ u.id }})"
               title="{{ 'Unblock' if u.is_blocked else 'Block' }}">
               {{ '🔓 Unblock' if u.is_blocked else '🔒 Block' }}
             </button>
+            <!-- Promote / Demote button — toggles the user's admin role -->
             <button class="act-btn act-role" id="role-btn-{{ u.id }}"
               onclick="toggleAdmin({{ u.id }})"
               title="{{ 'Demote to User' if u.is_admin else 'Promote to Admin' }}">
               {{ '⬇ Demote' if u.is_admin else '⬆ Promote' }}
             </button>
+            <!-- Delete button — prompts for confirmation before removing the account -->
             <button class="act-btn act-delete"
               onclick="deleteUser({{ u.id }}, '{{ u.username }}')">
               🗑 Delete
             </button>
             {% else %}
+            <!-- No actions available for the logged-in admin's own row -->
             <span style="color:#484f58;font-size:0.8rem;">—</span>
             {% endif %}
           </td>
@@ -73,6 +87,11 @@
 </div>
 
 <script>
+  // ── AJAX Account Actions ──
+  // All three functions update the DOM immediately on success so the table
+  // reflects the new state without a full page reload.
+
+  // Toggle a user's blocked status; updates the status badge and button label
   async function toggleBlock(userId) {
     const res = await fetch(`/admin/toggle_block/${userId}`, { method: 'POST' });
     const data = await res.json();
@@ -93,6 +112,7 @@
     }
   }
 
+  // Toggle a user's admin role; updates the role badge and button label
   async function toggleAdmin(userId) {
     const res = await fetch(`/admin/toggle_admin/${userId}`, { method: 'POST' });
     const data = await res.json();
@@ -110,6 +130,7 @@
     }
   }
 
+  // Permanently delete a user account after confirmation; removes the table row on success
   async function deleteUser(userId, username) {
     if (!confirm(`Delete account "${username}"? This cannot be undone.`)) return;
     const res = await fetch(`/admin/delete_user/${userId}`, { method: 'POST' });

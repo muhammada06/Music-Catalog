@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+<!-- admin_account.html — registration form for new admin users.
+     POSTs to admin.creation; username and email must be unique. -->
 
 {% block title %}Create Admin Account{% endblock %}
 
@@ -8,11 +10,13 @@
 
 {% block content %}
 
+<!-- ── Centered Auth Card ── -->
 <div class="auth-page">
   <div class="auth-card">
     <h1>Create Admin Account</h1>
     <p class="subtitle">For artists and labels managing their catalog.</p>
 
+    <!-- Registration form — sets is_admin=True on the new User record -->
     <form action="{{ url_for('admin.creation') }}" method="POST">
       <div class="form-group">
         <label for="username">Username</label>

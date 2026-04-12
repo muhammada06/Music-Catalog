@@ -1,4 +1,9 @@
 {% extends "base.html" %}
+<!-- admin_dashboard.html — admin song management interface.
+     Left panel: filterable/sortable song list.
+     Right panel: song detail view with Edit/Delete actions and Deezer widget.
+     Top bar: search input, genre filter, sort order (all client-side, no page reload).
+     Import modal: CSV/JSON bulk upload via admin.import_songs. -->
 
 {% block title %}Admin Dashboard{% endblock %}
 
@@ -6,6 +11,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
 
+<!-- ── Navbar Center Slot: Search, Filter, Sort Controls ── -->
 {% block nav_center %}
 <div class="nav-search">
   <div class="nav-search-input">
@@ -15,6 +21,7 @@
     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
     Search
   </button>
+  <!-- Genre dropdown populated dynamically from the song list on page load -->
   <select class="nav-filter-select" id="genre-filter">
     <option value="">All genres</option>
   </select>
@@ -25,6 +32,7 @@
     <option value="year-desc">Year: Newest first</option>
     <option value="year-asc">Year: Oldest first</option>
   </select>
+  <!-- Shows "visible / total" when a filter is active -->
   <span class="nav-search-count" id="search-count"></span>
 </div>
 {% endblock %}
@@ -32,6 +40,7 @@
 {% block content %}
 
 <div class="dashboard-wrap">
+  <!-- ── Dashboard Header ── -->
   <div class="dashboard-header">
     <div>
       <h1>Admin Dashboard</h1>
@@ -39,12 +48,16 @@
     </div>
     <div style="display:flex; gap:10px; align-items:center;">
       <a class="btn btn-blue" href="{{ url_for('admin.add_song') }}">+ Add Song</a>
+      <!-- Opens the import modal overlay -->
       <button class="btn btn-gray" onclick="document.getElementById('import-modal').style.display='flex'">Import</button>
     </div>
   </div>
 
+  <!-- ── Two-Panel Layout ── -->
   <div class="split">
-    <!-- Left: song list -->
+    <!-- Left Panel: Scrollable Song List
+         Each .song-item stores all song data as data-* attributes so the
+         right panel can be populated without an extra network request. -->
     <div class="song-panel">
       <div class="song-list" id="song-list">
       {% if songs %}
@@ -72,7 +85,7 @@
       </div>
     </div>
 
-    <!-- Right: detail -->
+    <!-- Right Panel: Song Detail View (populated by selectSong()) -->
     <div class="detail-panel" id="detail-panel">
       <div class="detail-placeholder">
         <div style="font-size:2.5rem; margin-bottom:8px;">🎵</div>
@@ -82,6 +95,9 @@
   </div>
 </div>
 
+<!-- ── Import Modal Overlay ──
+     Hidden by default; shown when the "Import" button is clicked.
+     POSTs to admin.import_songs which handles CSV/JSON parsing. -->
 <div id="import-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:999;">
   <div style="background:#161b22; border:1px solid #21262d; border-radius:12px; padding:32px 36px; width:100%; max-width:420px;">
     <h2 style="color:#e6edf3; font-size:1.2rem; font-weight:700; margin-bottom:20px;">Import Songs</h2>
@@ -95,6 +111,7 @@
         <button type="button" class="btn btn-gray" onclick="document.getElementById('import-modal').style.display='none'">Cancel</button>
       </div>
     </form>
+    <!-- Remind admins of the expected column names -->
     <p style="font-size:0.78rem; color:#8b949e; margin-top:14px;">
       CSV columns: title, artist, album, genre, release_date, album_cover, spotify_link<br>
       JSON: array of objects with the same keys.
@@ -103,6 +120,9 @@
 </div>
 
 <script>
+  // ── Genre Filter Population ──
+  // Collect unique genre values from all .song-item data-genre attributes
+  // and inject them as <option> elements into the genre dropdown.
   function populateFilters() {
     const genres = new Set();
     document.querySelectorAll('.song-item').forEach(el => {
@@ -117,6 +137,9 @@
     });
   }
 
+  // ── Client-Side Filter + Sort ──
+  // Operates entirely on the DOM — no network requests.
+  // Songs are filtered by query (title/artist/album) and genre, then sorted.
   function applyFiltersAndSort() {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
     const genre = document.getElementById('genre-filter').value.toLowerCase();
@@ -124,7 +147,7 @@
     const list  = document.getElementById('song-list');
     const items = [...list.querySelectorAll('.song-item')];
 
-    // Sort DOM nodes
+    // Re-append items in the new sorted order
     items.sort((a, b) => {
       if (sort === 'artist-asc')  return (a.dataset.artist || '').localeCompare(b.dataset.artist || '');
       if (sort === 'artist-desc') return (b.dataset.artist || '').localeCompare(a.dataset.artist || '');
@@ -132,11 +155,12 @@
       const yb = (b.dataset.date || '').slice(0, 4) || '0000';
       if (sort === 'year-asc')  return ya.localeCompare(yb);
       if (sort === 'year-desc') return yb.localeCompare(ya);
+      // Fall back to the original server-rendered insertion order
       return (a.dataset.originalIndex || 0) - (b.dataset.originalIndex || 0);
     });
     items.forEach(item => list.appendChild(item));
 
-    // Filter visibility
+    // Show/hide items based on the active filters
     let visible = 0;
     items.forEach(item => {
       const matches =
@@ -148,6 +172,7 @@
     });
 
     const total = items.length;
+    // Show "x / total" when filtering, plain total otherwise
     document.getElementById('search-count').textContent =
       (query || genre || sort) ? `${visible} / ${total}` : `${total}`;
     document.getElementById('no-results').style.display =
@@ -156,9 +181,12 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
+    // Store original render order so we can restore it when sorting is cleared
     document.querySelectorAll('.song-item').forEach((el, i) => { el.dataset.originalIndex = i; });
     const total = document.querySelectorAll('.song-item').length;
     document.getElementById('search-count').textContent = total;
+
+    // Wire up filter/search controls
     document.getElementById('search-btn').addEventListener('click', applyFiltersAndSort);
     document.getElementById('search-input').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') applyFiltersAndSort();
@@ -167,6 +195,7 @@
       document.getElementById(id).addEventListener('change', applyFiltersAndSort)
     );
 
+    // Auto-select a song if the URL contains ?song=<id> (e.g. after editing)
     const songId = new URLSearchParams(window.location.search).get('song');
     if (songId) {
       const el = document.querySelector(`.song-item[data-id="${songId}"]`);
@@ -174,10 +203,15 @@
     }
   });
 
+  // ── HTML Escaping Helper ──
+  // Used when building detail panel HTML from untrusted data-* values
   function escAttr(s) {
     return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
   }
 
+  // ── Online Sources Renderer ──
+  // Renders each comma-separated URL as a favicon icon link.
+  // Falls back to a plain link emoji if the URL can't be parsed.
   function renderSources(online) {
     if (!online) return '';
     const urls = online.split(',').map(u => u.trim()).filter(Boolean);
@@ -195,7 +229,11 @@
     }).join('');
   }
 
+  // ── Song Detail Panel ──
+  // Builds the right-panel HTML from the clicked .song-item's data-* attributes,
+  // then fires an async Deezer preview lookup to replace the cover with a widget.
   function selectSong(el) {
+    // Deactivate previous selection
     document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
 
@@ -211,16 +249,18 @@
     const delUrl  = el.dataset.delete;
     const id      = el.dataset.id;
 
+    // Show local cover image, or a placeholder if no cover exists
     const coverHtml = cover
       ? `<div class="cover-area" id="cover-area"><img src="${cover}" alt="Album Cover" style="width:280px;height:280px;border-radius:12px;object-fit:cover;display:block;"></div>`
       : `<div class="cover-area" id="cover-area"><div class="detail-cover-placeholder">🎵</div></div>`;
 
+    // Show the HTML5 audio player only if a local demo file exists
     const audioHtml = audio
       ? `<audio controls style="width:100%; margin-bottom:12px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
       : '';
 
+    // Placeholder div that the Deezer widget replaces asynchronously
     const previewButton = `<div id="preview-container"></div>`;
-
 
     document.getElementById('detail-panel').innerHTML = `
       ${coverHtml}
@@ -244,6 +284,7 @@
       </div>
     `;
 
+    // Async: fetch Deezer track ID and swap the cover with an embedded widget
     (async () => {
       try {
         const res = await fetch(`/user/preview/${id}`);
@@ -251,6 +292,7 @@
         const deezerId = data.deezer_id;
 
         if (deezerId) {
+          // Replace the static cover image with the Deezer player widget
           document.getElementById('cover-area').innerHTML = `
             <iframe
               title="deezer-widget"

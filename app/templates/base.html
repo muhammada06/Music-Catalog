@@ -1,20 +1,28 @@
 <!doctype html>
+<!-- base.html — shared layout inherited by all pages.
+     Child templates override: title, extra_css, nav_center, content. -->
 <html>
 <head>
   <meta charset="utf-8">
   <title>{% block title %}Music Catalog{% endblock %}</title>
+  <!-- Global stylesheet loaded on every page -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <!-- Page-specific stylesheets injected here by child templates -->
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+  <!-- ── Top Navigation Bar ── -->
   <nav class="base-nav">
+    <!-- Brand logo — links back to the homepage from any page -->
     <a class="nav-logo" href="/" style="display:flex; align-items:center; gap:8px;">
       <img src="/static/watermelon.png" style="height:28px; width:28px; object-fit:contain;">
       <span style="color:#e53935;">Music</span><span style="color:#4caf50;"> Catalog</span>
     </a>
+    <!-- Optional center slot used by dashboard pages (e.g. search bar) -->
     {% block nav_center %}{% endblock %}
     <div class="nav-links">
       {% if current_user.is_authenticated %}
+        <!-- Hide the "go to dashboard" link when already on a dashboard page -->
         {% if request.endpoint not in ('admin.home', 'admin.dashboard', 'user.browse_playlists') %}
           {% if current_user.is_admin %}
             <a href="{{ url_for('admin.home') }}">Admin Home</a>
@@ -26,18 +34,23 @@
           <button type="submit">Logout</button>
         </form>
       {% elif request.endpoint != 'auth.login' %}
+        <!-- Show Login link only when not already on the login page -->
         <a href="{{ url_for('auth.login') }}">Login</a>
       {% endif %}
     </div>
   </nav>
 
   <main>
+    <!-- Flash messages are shown as browser alerts.
+         Logout confirmations are suppressed on the login page to avoid
+         redundant pop-ups when the user is redirected after logging out. -->
     {% for category, message in get_flashed_messages(with_categories=true) %}
       {% if not (request.endpoint == 'auth.login' and category == 'logout') %}
         <script>alert("{{ message }}");</script>
       {% endif %}
     {% endfor %}
 
+    <!-- ── Page Content (overridden by child templates) ── -->
     {% block content %}{% endblock %}
   </main>
 </body>

@@ -1,3 +1,5 @@
+/* ── Auth Page Layout ──
+   Centers the auth card vertically within the viewport minus the navbar height. */
 .auth-page {
   min-height: calc(100vh - 60px);
   background: #0d1117;
@@ -7,15 +9,17 @@
   padding: 40px 16px;
 }
 
+/* ── Auth Card Container ── */
 .auth-card {
   background: #161b22;
   border: 1px solid #21262d;
   border-radius: 12px;
   padding: 40px;
   width: 100%;
-  max-width: 420px;
+  max-width: 420px;  /* Prevents the card from spanning too wide on large screens */
 }
 
+/* ── Card Header ── */
 .auth-card h1 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -29,6 +33,7 @@
   margin-bottom: 28px;
 }
 
+/* ── Form Fields ── */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -54,10 +59,12 @@
   width: 100%;
 }
 
+/* Highlight active input with a blue border */
 .form-group input:focus {
   border-color: #58a6ff;
 }
 
+/* ── Submit Button (base) ── */
 .submit-btn {
   width: 100%;
   padding: 11px;
@@ -71,6 +78,7 @@
   transition: background 0.15s;
 }
 
+/* Color variants: blue = sign-in, green = user creation, red = admin / destructive */
 .submit-btn-blue  { background: #1f6feb; }
 .submit-btn-blue:hover  { background: #388bfd; }
 
@@ -80,6 +88,7 @@
 .submit-btn-red   { background: #da3633; }
 .submit-btn-red:hover   { background: #f85149; }
 
+/* ── Navigation Links Below the Form ── */
 .auth-links {
   margin-top: 20px;
   text-align: center;

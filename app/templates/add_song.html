@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+<!-- add_song.html — form for admins to add a new song to the catalog.
+     Title and Artist are required; all other fields are optional.
+     File uploads (audio, album_cover) are saved to instance/ directories. -->
 
 {% block title %}Add Song{% endblock %}
 
@@ -12,7 +15,10 @@
   <div class="card">
     <h1>Add a New Song</h1>
 
+    <!-- multipart/form-data required for file upload fields -->
     <form method="POST" enctype="multipart/form-data">
+
+      <!-- ── Required Fields ── -->
       <div class="form-group">
         <label for="title">Title *</label>
         <input type="text" name="title" id="title" required placeholder="Song title">
@@ -23,6 +29,7 @@
         <input type="text" name="artist" id="artist" required placeholder="Artist name">
       </div>
 
+      <!-- ── Optional Metadata ── -->
       <div class="form-group">
         <label for="album">Album</label>
         <input type="text" name="album" id="album" placeholder="Album name">
@@ -38,6 +45,7 @@
         <input type="date" name="release_date" id="release_date">
       </div>
 
+      <!-- ── File Uploads ── -->
       <div class="form-group">
         <label for="audio">Audio File (MP3, WAV, etc.)</label>
         <input type="file" name="audio" id="audio" accept="audio/*">

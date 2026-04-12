@@ -1,4 +1,5 @@
-/* Shared form page layout */
+/* ── Add / Edit Song Page Layout ──
+   Centers the form card vertically; used by add_song.html and edit_song.html. */
 .page {
   min-height: calc(100vh - 62px);
   display: flex;
@@ -8,13 +9,14 @@
   background: #0d1117;
 }
 
+/* ── Form Card Container ── */
 .card {
   background: #161b22;
   border: 1px solid #21262d;
   border-radius: 12px;
   padding: 36px 40px;
   width: 100%;
-  max-width: 480px;
+  max-width: 480px;  /* Wider than auth cards to accommodate file upload inputs */
 }
 
 .card h1 {
@@ -24,6 +26,7 @@
   margin-bottom: 24px;
 }
 
+/* ── Form Fields ── */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -52,11 +55,13 @@
 
 .form-group input:focus { border-color: #58a6ff; }
 
+/* File inputs use the browser's default appearance but with muted text */
 .form-group input[type="file"] {
   font-size: 0.85rem;
   color: #8b949e;
 }
 
+/* ── Submit Button ── */
 .submit-btn {
   width: 100%;
   padding: 11px;
@@ -73,6 +78,7 @@
 
 .submit-btn:hover { background: #2ea043; }
 
+/* ── Back / Secondary Link ── */
 .back-link {
   display: block;
   text-align: center;
@@ -84,7 +90,9 @@
 
 .back-link:hover { text-decoration: underline; }
 
-/* edit_song.html — online sources */
+/* ── Online Sources Section (edit_song.html) ──
+   Each source URL gets its own row with an inline remove button.
+   Rows are added/removed dynamically by addSource() / removeSource() JS. */
 .source-row {
   display: flex;
   gap: 8px;
@@ -101,6 +109,7 @@
   font-size: 0.9rem;
 }
 
+/* Red ✕ button to remove a source row */
 .source-remove-btn {
   background: #da3633;
   color: white;
@@ -110,6 +119,7 @@
   cursor: pointer;
 }
 
+/* "Add Source" button below the source list */
 .source-add-btn {
   background: #21262d;
   color: #e6edf3;
@@ -121,6 +131,8 @@
   font-size: 0.85rem;
 }
 
+/* ── Album Cover Preview (edit_song.html) ──
+   Shows the existing cover image above the file input when editing. */
 .cover-preview {
   height: 80px;
   border-radius: 6px;
@@ -128,6 +140,7 @@
   display: block;
 }
 
+/* Inline form so the "Remove demo song" button renders on the same line as the back link */
 .remove-demo-form {
   display: inline;
 }

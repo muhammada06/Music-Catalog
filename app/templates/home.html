@@ -1,18 +1,33 @@
 <!doctype html>
+<!-- home.html — the public-facing homepage and song catalog.
+     Does NOT extend base.html (has its own <nav>) because the layout differs
+     significantly between guest (split: catalog + auth panel) and authenticated
+     (full-width catalog only) views.
+
+     Architecture:
+       - All songs are injected as SONGS JSON on page load; no infinite scroll from server.
+       - Cards are lazy-rendered row-by-row via IntersectionObserver as the user scrolls.
+       - Filtering/grouping/sorting are fully client-side.
+       - Favorites and "add to playlist" use AJAX (/user/toggle_favorite, /user/add_to_playlist_ajax).
+-->
 <html>
 <head>
   <meta charset="utf-8">
   <title>Music Catalog</title>
   <link rel="stylesheet" href="/static/css/home.css">
 </head>
+<!-- 'guest' body class switches the layout to the two-column split view -->
 <body class="{% if not current_user.is_authenticated %}guest{% endif %}">
 
+  <!-- ── Top Navigation Bar ── -->
   <nav>
+    <!-- Brand logo -->
     <a class="nav-logo" href="/" style="display:flex; align-items:center; gap:8px;">
       <img src="/static/watermelon.png" style="height:28px; width:28px; object-fit:contain;">
       <span style="color:#e53935;">Music</span><span style="color:#4caf50;"> Catalog</span>
     </a>
 
+    <!-- Search, group-by, and sort controls (all handled client-side via rebuild()) -->
     <div class="nav-search">
       <div class="nav-search-input">
         <input type="text" id="search-input" placeholder="Search songs, artists…">
@@ -21,11 +36,13 @@
         <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
         Search
       </button>
+      <!-- Determines how songs are grouped into sections -->
       <select id="group-select" class="nav-filter-select">
         <option value="genre">Genre</option>
         <option value="artist">Artist</option>
         <option value="year">Release Year</option>
       </select>
+      <!-- Sorts the section headings (not individual cards within a section) -->
       <select id="sort-select" class="nav-filter-select">
         <option value="default">Popularity</option>
         <option value="asc">A → Z</option>
@@ -41,6 +58,7 @@
     </div>
   </nav>
 
+  <!-- ── Flash Messages (e.g. after login redirect) ── -->
   {% if get_flashed_messages() %}
     <div class="flash-messages">
       {% for message in get_flashed_messages() %}
@@ -49,10 +67,15 @@
     </div>
   {% endif %}
 
+  <!-- ── Main Content ──
+       'home-full'  = authenticated view (catalog fills the width)
+       'home-split' = guest view (catalog on left, sign-in panel on right) -->
   <main class="{% if current_user.is_authenticated %}home-full{% else %}home-split{% endif %}">
 
+    <!-- ── Left / Full-Width: Song Catalog Preview Panel ── -->
     <div class="preview-panel {% if current_user.is_authenticated %}preview-panel--full{% endif %}" id="preview-panel">
 
+      <!-- Hero Header (content differs by auth state) -->
       <div class="preview-header">
         <div class="preview-eyebrow">
           <span class="hero-badge">{% if current_user.is_authenticated %}Welcome back{% else %}Live Catalog{% endif %}</span>
@@ -74,6 +97,7 @@
         {% endif %}
       </div>
 
+      <!-- Catalog sections are rendered here by rebuild() -->
       <div id="catalog-sections"></div>
       <div id="no-results" style="display:none;" class="preview-empty">
         <div style="font-size:2rem; margin-bottom:8px;">🔍</div>
@@ -82,6 +106,7 @@
 
     </div>
 
+    <!-- ── Right Panel: Sign-In / Registration (guests only) ── -->
     {% if not current_user.is_authenticated %}
     <div class="auth-side">
       <div class="auth-side-inner">
@@ -89,6 +114,7 @@
           <h1>Sign In</h1>
           <p class="subtitle">Stream the full catalog and save your favourites.</p>
         </div>
+        <!-- Inline login form — same action as login.html -->
         <form action="{{ url_for('auth.login') }}" method="POST">
           <div class="form-group">
             <label for="username">Username</label>
@@ -117,11 +143,15 @@
   {% endif %}
 
 <script>
-const SONGS    = {{ songs_data | tojson }};
+// ── Page-Level Constants ──
+// Injected by Jinja so the JS can work with server data without extra API calls.
+const SONGS    = {{ songs_data | tojson }};          // Full song list
 const IS_AUTH  = {{ current_user.is_authenticated | tojson }};
 const IS_ADMIN = {{ (current_user.is_authenticated and current_user.is_admin) | tojson }};
-const FAV_IDS  = new Set({{ favorite_ids | tojson }});
-const PLAYLISTS = {{ playlists_data | tojson }};
+const FAV_IDS  = new Set({{ favorite_ids | tojson }}); // Pre-populated favorite song IDs
+const PLAYLISTS = {{ playlists_data | tojson }};       // User's own playlists for the add-menu
+
+// Dashboard URL depends on the user's role; used for card click navigation
 {% if current_user.is_authenticated %}
   {% if current_user.is_admin %}
   const DASH_URL = {{ url_for('admin.home') | tojson }};
@@ -132,6 +162,7 @@ const PLAYLISTS = {{ playlists_data | tojson }};
   const DASH_URL = '';
 {% endif %}
 
+// ── DOM References ──
 const container   = document.getElementById('catalog-sections');
 const searchBtn   = document.getElementById('search-btn');
 const searchInput = document.getElementById('search-input');
@@ -140,34 +171,43 @@ const sortSelect  = document.getElementById('sort-select');
 const countBadge  = document.getElementById('search-count');
 const noResults   = document.getElementById('no-results');
 
-// How many cards to show initially per row (based on panel width)
+// ── Initial Batch Size ──
+// Calculates how many cards to show initially per row based on panel width,
+// so the row appears filled without loading hundreds of cards on first paint.
 function initialBatch() {
   const panel = document.getElementById('preview-panel');
   const w = panel ? panel.clientWidth - 104 : window.innerWidth;
   return Math.max(6, Math.ceil(w / 176) + 2);
 }
 
+// ── HTML Escaping ──
 function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── Song Card Builder ──
+// Creates a .song-card element with cover image, title, artist,
+// a heart/favorite button (auth users, non-admin), and a 3-dot
+// "add to playlist" dropdown menu (auth, non-admin only).
 function buildCard(song) {
   const card = document.createElement('div');
   card.className = 'song-card' + (IS_AUTH ? ' song-card--link' : '');
   if (IS_AUTH) card.onclick = () => {
+    // Track recently viewed songs in localStorage (max 30)
     let recent = JSON.parse(localStorage.getItem('musicRecentHistory') || '[]');
     recent = [song.id, ...recent.filter(id => id !== song.id)].slice(0, 30);
     localStorage.setItem('musicRecentHistory', JSON.stringify(recent));
     window.location = DASH_URL + '?song=' + song.id;
   };
 
+  // ── Cover Image or Placeholder ──
   const coverDiv = document.createElement('div');
   coverDiv.className = 'song-card-cover';
   if (song.cover) {
     const img = document.createElement('img');
     img.src = song.cover;
     img.alt = escHtml(song.title);
-    img.loading = 'lazy';
+    img.loading = 'lazy';  // Defer off-screen images for performance
     coverDiv.appendChild(img);
   } else {
     const ph = document.createElement('div');
@@ -175,6 +215,7 @@ function buildCard(song) {
     ph.textContent = '🎵';
     coverDiv.appendChild(ph);
   }
+  // Lock overlay shown to guests so they know sign-in is needed to play
   if (!IS_AUTH) {
     const ov = document.createElement('div');
     ov.className = 'song-card-overlay';
@@ -182,29 +223,31 @@ function buildCard(song) {
     coverDiv.appendChild(ov);
   }
 
-  // Heart / favorite button (not for admins)
+  // ── Heart / Favorite Button (non-admin authenticated users only) ──
   if (!IS_ADMIN) {
-  const heart = document.createElement('button');
-  heart.className = 'heart-btn' + (FAV_IDS.has(song.id) ? ' heart-active' : '');
-  heart.innerHTML = FAV_IDS.has(song.id) ? '♥' : '♡';
-  if (IS_AUTH) {
-    heart.addEventListener('click', async e => {
-      e.stopPropagation();
-      const res = await fetch('/user/toggle_favorite/' + song.id, { method: 'POST' });
-      const data = await res.json();
-      heart.innerHTML = data.in_favorites ? '♥' : '♡';
-      heart.classList.toggle('heart-active', data.in_favorites);
-      if (data.in_favorites) FAV_IDS.add(song.id); else FAV_IDS.delete(song.id);
-    });
-  } else {
-    heart.title = 'Sign in to save favorites';
-    heart.style.opacity = '0.4';
-    heart.style.cursor = 'default';
+    const heart = document.createElement('button');
+    heart.className = 'heart-btn' + (FAV_IDS.has(song.id) ? ' heart-active' : '');
+    heart.innerHTML = FAV_IDS.has(song.id) ? '♥' : '♡';
+    if (IS_AUTH) {
+      heart.addEventListener('click', async e => {
+        e.stopPropagation(); // Don't trigger card navigation
+        const res = await fetch('/user/toggle_favorite/' + song.id, { method: 'POST' });
+        const data = await res.json();
+        heart.innerHTML = data.in_favorites ? '♥' : '♡';
+        heart.classList.toggle('heart-active', data.in_favorites);
+        // Keep FAV_IDS in sync so re-rendered cards show correct state
+        if (data.in_favorites) FAV_IDS.add(song.id); else FAV_IDS.delete(song.id);
+      });
+    } else {
+      // Guests see a disabled heart button as a visual hint
+      heart.title = 'Sign in to save favorites';
+      heart.style.opacity = '0.4';
+      heart.style.cursor = 'default';
+    }
+    coverDiv.appendChild(heart);
   }
-  coverDiv.appendChild(heart);
-  } // end !IS_ADMIN (heart)
 
-  // 3-dot "add to playlist" menu (auth, non-admin only)
+  // ── 3-dot "Add to Playlist" Dropdown Menu (auth, non-admin only) ──
   if (IS_AUTH && !IS_ADMIN) {
     const menuBtn = document.createElement('button');
     menuBtn.className = 'song-card-menu-btn';
@@ -214,6 +257,7 @@ function buildCard(song) {
     const menu = document.createElement('div');
     menu.className = 'song-card-menu';
 
+    // Always show Favorites first, then other playlists, then "New Playlist"
     const sorted = [
       ...PLAYLISTS.filter(p => p.name === 'Favorites'),
       ...PLAYLISTS.filter(p => p.name !== 'Favorites'),
@@ -226,6 +270,7 @@ function buildCard(song) {
       item.addEventListener('click', async e => {
         e.stopPropagation();
         if (p.id === 'NEW') { window.location = '/user/create_playlist'; return; }
+        // AJAX add — no page reload; shows a brief checkmark on success
         const res = await fetch(`/user/add_to_playlist_ajax/${song.id}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -243,6 +288,7 @@ function buildCard(song) {
 
     menuBtn.addEventListener('click', e => {
       e.stopPropagation();
+      // Close any other open menus before opening this one
       document.querySelectorAll('.song-card-menu.open').forEach(m => m.classList.remove('open'));
       menu.classList.toggle('open');
     });
@@ -253,6 +299,7 @@ function buildCard(song) {
 
   card.appendChild(coverDiv);
 
+  // ── Song Info (title + artist) ──
   const info = document.createElement('div');
   info.className = 'song-card-info';
   info.innerHTML = '<div class="song-card-title">' + escHtml(song.title) + '</div>'
@@ -261,6 +308,10 @@ function buildCard(song) {
   return card;
 }
 
+// ── Catalog Section Builder ──
+// Creates a horizontally-scrollable section with a label and song count.
+// Cards within the section are lazy-loaded via IntersectionObserver as the
+// user scrolls toward the end of the row.
 function makeSection(label, songs) {
   const section = document.createElement('div');
   section.className = 'catalog-section';
@@ -271,31 +322,33 @@ function makeSection(label, songs) {
                    + '<span class="section-count">' + songs.length + ' songs</span>';
   section.appendChild(header);
 
+  // Horizontal scroll row — wheel events are intercepted for horizontal scrolling
   const row = document.createElement('div');
   row.className = 'section-row';
   row.addEventListener('wheel', e => {
     if (e.deltaY !== 0 && row.scrollWidth > row.clientWidth) {
       e.preventDefault();
-      row.scrollLeft += e.deltaY;
+      row.scrollLeft += e.deltaY;  // Convert vertical wheel to horizontal scroll
     }
   }, { passive: false });
   section.appendChild(row);
 
   let rendered = 0;
 
+  // Load the next batch of cards into the row
   function loadMore() {
     const batch = initialBatch();
     const slice = songs.slice(rendered, rendered + batch);
     slice.forEach(s => row.appendChild(buildCard(s)));
     rendered += slice.length;
-    // Remove sentinel if all loaded
+    // Disconnect observer and remove sentinel once all cards are rendered
     if (rendered >= songs.length && sentinel.parentNode) {
       sentinel.remove();
       observer.disconnect();
     }
   }
 
-  // Sentinel at end of row triggers more cards
+  // Invisible sentinel element at the end of the row triggers loadMore() when visible
   const sentinel = document.createElement('div');
   sentinel.className = 'row-sentinel';
   row.appendChild(sentinel);
@@ -305,23 +358,26 @@ function makeSection(label, songs) {
   }, { root: row, rootMargin: '300px' });
   observer.observe(sentinel);
 
-  loadMore(); // initial render
+  loadMore(); // Render the initial batch immediately
   return section;
 }
 
+// ── Main Rebuild Function ──
+// Called on every filter/sort/search change. Groups the filtered songs by the
+// selected field, sorts the group keys, then re-renders all sections.
 function rebuild() {
   const field = groupSelect.value;
   const sort  = sortSelect.value;
   const query = searchInput.value.toLowerCase().trim();
 
-  // Filter songs by search
+  // Filter songs by search query (title or artist)
   const filtered = query
     ? SONGS.filter(s =>
         (s.title  || '').toLowerCase().includes(query) ||
         (s.artist || '').toLowerCase().includes(query))
     : SONGS;
 
-  // Group
+  // Group songs by the selected field
   const groups = {};
   filtered.forEach(s => {
     let key;
@@ -332,12 +388,12 @@ function rebuild() {
     groups[key].push(s);
   });
 
-  // Sort keys
+  // Sort section headings based on the chosen sort order
   const keys = Object.keys(groups).sort((a, b) => {
     if (sort === 'default') {
-      if (field === 'genre')  return groups[b].length - groups[a].length; // most songs first
-      if (field === 'year')   return b.localeCompare(a);                  // newest first
-      return a.localeCompare(b);                                           // artist: A→Z
+      if (field === 'genre')  return groups[b].length - groups[a].length; // Most songs first
+      if (field === 'year')   return b.localeCompare(a);                  // Newest year first
+      return a.localeCompare(b);                                           // Artist: A → Z
     }
     return sort === 'desc' ? b.localeCompare(a) : a.localeCompare(b);
   });
@@ -349,14 +405,16 @@ function rebuild() {
   countBadge.textContent = filtered.length;
 }
 
-// Initial render
+// ── Initial Render ──
 rebuild();
 
+// ── Event Listeners ──
 searchBtn.addEventListener('click', rebuild);
 searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') rebuild(); });
 groupSelect.addEventListener('change', rebuild);
 sortSelect.addEventListener('change', rebuild);
 
+// Close any open card menus when clicking elsewhere on the page
 document.addEventListener('click', () => {
   document.querySelectorAll('.song-card-menu.open').forEach(m => m.classList.remove('open'));
 });
