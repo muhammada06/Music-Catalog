@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+<!-- user_account.html — registration form for new regular (non-admin) users.
+     POSTs to user.creation; a Favorites playlist is auto-created on success. -->
 
 {% block title %}Create User Account{% endblock %}
 
@@ -8,11 +10,13 @@
 
 {% block content %}
 
+<!-- ── Centered Auth Card ── -->
 <div class="auth-page">
   <div class="auth-card">
     <h1>Create User Account</h1>
     <p class="subtitle">For listeners who want to browse and stream music.</p>
 
+    <!-- Registration form — username and email must be unique -->
     <form action="{{ url_for('user.creation') }}" method="POST">
       <div class="form-group">
         <label for="first_name">First Name</label>

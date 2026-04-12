@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+<!-- admin_home.html — landing page for authenticated admins.
+     Shows navigation cards to the two main admin sections. -->
 
 {% block title %}Admin Panel{% endblock %}
 
@@ -8,13 +10,16 @@
 
 {% block content %}
 <div class="admin-home">
+  <!-- ── Header ── -->
   <div class="admin-home-header">
     <div class="admin-home-badge">Admin Panel</div>
     <h1>Welcome back, {{ current_user.username }}</h1>
     <p>What would you like to manage today?</p>
   </div>
 
+  <!-- ── Navigation Cards ── -->
   <div class="admin-home-grid">
+    <!-- Card: Song Dashboard — manage catalog entries -->
     <a href="{{ url_for('admin.dashboard') }}" class="admin-card">
       <div class="admin-card-icon">🎵</div>
       <div class="admin-card-body">
@@ -24,6 +29,7 @@
       <div class="admin-card-arrow">→</div>
     </a>
 
+    <!-- Card: Account Management — block, promote, or delete users -->
     <a href="{{ url_for('admin.accounts') }}" class="admin-card">
       <div class="admin-card-icon">👥</div>
       <div class="admin-card-body">

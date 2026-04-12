@@ -1,3 +1,6 @@
+/* ── Dashboard Page Layout ──
+   Full-viewport container that stacks the header above the split panel.
+   height is viewport minus the navbar so the inner panels can fill and scroll independently. */
 .dashboard-wrap {
   padding: 28px 36px;
   height: calc(100vh - 62px);
@@ -6,6 +9,7 @@
   box-sizing: border-box;
 }
 
+/* ── Dashboard Header ── */
 .dashboard-header {
   display: flex;
   align-items: center;
@@ -25,6 +29,7 @@
   margin-top: 2px;
 }
 
+/* ── Action Buttons ── */
 .btn {
   padding: 8px 18px;
   border-radius: 6px;
@@ -39,6 +44,7 @@
   box-sizing: border-box;
 }
 
+/* Subtle lift on hover for tactile feedback */
 .btn:hover { transform: translateY(-1px); }
 .btn-blue  { background: #1f6feb; color: white; }
 .btn-blue:hover  { background: #388bfd; }
@@ -47,7 +53,8 @@
 .btn-red   { background: #da3633; color: white; }
 .btn-red:hover   { background: #f85149; }
 
-/* Split layout */
+/* ── Two/Three Column Split Layout ──
+   flex: 1 + overflow: hidden lets each child column handle its own scroll. */
 .split {
   display: flex;
   gap: 20px;
@@ -55,16 +62,16 @@
   overflow: hidden;
 }
 
-/* Left: song panel wrapper */
+/* ── Left / Center: Song Panel Wrapper ── */
 .song-panel {
   width: 340px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  min-height: 0;  /* Required for nested overflow-y: auto to work in a flex column */
 }
 
-/* Song list (scrollable inner) */
+/* ── Scrollable Song List ── */
 .song-list {
   flex: 1;
   overflow-y: auto;
@@ -74,6 +81,7 @@
   min-height: 0;
 }
 
+/* "No results" message — toggled by JS filter logic */
 .no-results {
   font-size: 0.85rem;
   color: #484f58;
@@ -82,6 +90,7 @@
   display: none;
 }
 
+/* ── Individual Song List Item ── */
 .song-item {
   background: #161b22;
   border: 1px solid #21262d;
@@ -91,13 +100,14 @@
   transition: border-color 0.15s, background 0.15s;
 }
 
-.song-item:hover { background: #1c2128; border-color: #388bfd; }
+.song-item:hover  { background: #1c2128; border-color: #388bfd; }
 .song-item.active { border-color: #58a6ff; background: #1c2128; }
 
 .song-item .s-title { font-weight: 700; font-size: 0.95rem; color: #e6edf3; }
 .song-item .s-meta  { font-size: 0.8rem; color: #8b949e; margin-top: 2px; }
 
-/* Right: detail panel */
+/* ── Right: Song Detail Panel ──
+   flex: 1 so it expands to fill the remaining width after the song panel. */
 .detail-panel {
   flex: 1;
   background: #161b22;
@@ -111,6 +121,7 @@
   overflow-y: auto;
 }
 
+/* Shown before any song is selected */
 .detail-placeholder {
   margin: auto;
   color: #484f58;
@@ -118,6 +129,8 @@
   text-align: center;
 }
 
+/* ── Album Cover Area ──
+   Replaced asynchronously by the Deezer iframe once the preview is loaded. */
 .cover-area {
   width: 280px;
   margin: 0 auto 20px;
@@ -135,12 +148,14 @@
   transition: opacity 0.2s;
 }
 
+/* Container for the Deezer embedded player iframe */
 .deezer-widget-area {
   width: 100%;
   border-radius: 12px;
   overflow: hidden;
 }
 
+/* Legacy standalone cover image (used in some detail panels) */
 .detail-cover {
   width: 280px;
   height: 280px;
@@ -151,6 +166,7 @@
   background: #21262d;
 }
 
+/* Placeholder shown when no album cover exists */
 .detail-cover-placeholder {
   width: 280px;
   height: 280px;
@@ -164,6 +180,7 @@
   color: #484f58;
 }
 
+/* ── Song Detail Text ── */
 .detail-title {
   font-size: 1.4rem;
   font-weight: 700;
@@ -178,6 +195,7 @@
   margin-bottom: 16px;
 }
 
+/* ── Metadata Rows ── */
 .detail-info {
   width: 100%;
   display: flex;
@@ -197,6 +215,7 @@
 .detail-row .label { color: #8b949e; }
 .detail-row .value { color: #e6edf3; font-weight: 600; }
 
+/* ── Edit / Delete Action Buttons (admin detail panel) ── */
 .detail-actions {
   display: flex;
   gap: 10px;
@@ -204,4 +223,5 @@
   padding-top: 16px;
 }
 
+/* Empty list message shared across all three dashboard panels */
 .empty-msg { color: #8b949e; font-size: 0.9rem; text-align: center; padding: 20px; }

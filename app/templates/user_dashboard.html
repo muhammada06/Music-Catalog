@@ -1,4 +1,9 @@
 {% extends "base.html" %}
+<!-- user_dashboard.html — the main song browsing dashboard for regular users.
+     Left panel: filterable/sortable song list (same pattern as admin_dashboard).
+     Right panel: song detail with Deezer widget, Spotify embed, audio player,
+                  favorite button, and "Add to Playlist" selector.
+     Filter/sort are client-side only; playlist add uses a standard form POST. -->
 
 {% block title %}User Dashboard{% endblock %}
 
@@ -6,6 +11,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 {% endblock %}
 
+<!-- ── Navbar Center Slot: Search, Filter, Sort Controls ── -->
 {% block nav_center %}
 <div class="nav-search">
   <div class="nav-search-input">
@@ -15,6 +21,7 @@
     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zm-5.242 1.156a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
     Search
   </button>
+  <!-- Genre options are populated from the song list on page load -->
   <select class="nav-filter-select" id="genre-filter">
     <option value="">All genres</option>
   </select>
@@ -25,6 +32,7 @@
     <option value="year-desc">Year: Newest first</option>
     <option value="year-asc">Year: Oldest first</option>
   </select>
+  <!-- Shows "visible / total" when a filter is active -->
   <span class="nav-search-count" id="search-count"></span>
 </div>
 {% endblock %}
@@ -32,13 +40,16 @@
 {% block content %}
 
 <div class="dashboard-wrap">
+  <!-- ── Dashboard Header ── -->
   <div class="dashboard-header">
     <h1>Music Catalog</h1>
     <div class="welcome">Hello, {{ current_user.username }}</div>
   </div>
 
+  <!-- ── Two-Panel Layout ── -->
   <div class="split">
-    <!-- Left: song list -->
+    <!-- Left Panel: Scrollable Song List
+         All song fields are embedded as data-* attributes for client-side use. -->
     <div class="song-panel">
       <div class="song-list" id="song-list">
       {% if songs %}
@@ -65,7 +76,7 @@
       </div>
     </div>
 
-    <!-- Right: detail -->
+    <!-- Right Panel: Song Detail View (built dynamically by selectSong()) -->
     <div class="detail-panel" id="detail-panel">
       <div class="detail-placeholder">
         <div style="font-size:2.5rem; margin-bottom:8px;">🎵</div>
@@ -75,15 +86,20 @@
   </div>
 </div>
 
+<!-- Inject the user's playlist list as a JS variable for the "Add to Playlist" dropdown.
+     Injected separately so the main script block can be reused without inline Jinja. -->
 <script>
   const USER_PLAYLISTS = JSON.parse('{{ playlists | tojson | safe }}');
 </script>
 
 <script>
+  // ── HTML Escaping Helper ──
   function escAttr(s) {
     return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
   }
 
+  // ── Online Sources Renderer ──
+  // Renders each comma-separated URL as a favicon icon link.
   function renderSources(online) {
     if (!online) return '';
     const urls = online.split(',').map(u => u.trim()).filter(Boolean);
@@ -101,6 +117,9 @@
     }).join('');
   }
 
+  // ── Genre Filter Population ──
+  // Collects unique genres from all .song-item data-genre attributes
+  // and injects them as <option> elements into the genre dropdown.
   function populateFilters() {
     const genres = new Set();
     document.querySelectorAll('.song-item').forEach(el => {
@@ -115,6 +134,8 @@
     });
   }
 
+  // ── Client-Side Filter + Sort ──
+  // Re-orders and shows/hides .song-item elements without any network requests.
   function applyFiltersAndSort() {
     const query = document.getElementById('search-input').value.toLowerCase().trim();
     const genre = document.getElementById('genre-filter').value.toLowerCase();
@@ -122,7 +143,7 @@
     const list  = document.getElementById('song-list');
     const items = [...list.querySelectorAll('.song-item')];
 
-    // Sort DOM nodes
+    // Re-append in sorted order
     items.sort((a, b) => {
       if (sort === 'artist-asc')  return (a.dataset.artist || '').localeCompare(b.dataset.artist || '');
       if (sort === 'artist-desc') return (b.dataset.artist || '').localeCompare(a.dataset.artist || '');
@@ -130,11 +151,12 @@
       const yb = (b.dataset.date || '').slice(0, 4) || '0000';
       if (sort === 'year-asc')  return ya.localeCompare(yb);
       if (sort === 'year-desc') return yb.localeCompare(ya);
+      // Fall back to the original server-rendered order
       return (a.dataset.originalIndex || 0) - (b.dataset.originalIndex || 0);
     });
     items.forEach(item => list.appendChild(item));
 
-    // Filter visibility
+    // Show/hide based on active filters
     let visible = 0;
     items.forEach(item => {
       const matches =
@@ -154,9 +176,12 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     populateFilters();
+    // Record the original render order so sorting can be reversed
     document.querySelectorAll('.song-item').forEach((el, i) => { el.dataset.originalIndex = i; });
     const total = document.querySelectorAll('.song-item').length;
     document.getElementById('search-count').textContent = total;
+
+    // Wire up search and filter controls
     document.getElementById('search-btn').addEventListener('click', applyFiltersAndSort);
     document.getElementById('search-input').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') applyFiltersAndSort();
@@ -165,31 +190,38 @@
       document.getElementById(id).addEventListener('change', applyFiltersAndSort)
     );
 
+    // Auto-select a song if the URL contains ?song=<id>
     const songId = new URLSearchParams(window.location.search).get('song');
     if (songId) {
       const el = document.querySelector(`.song-item[data-id="${songId}"]`);
       if (el) { el.scrollIntoView({ block: 'nearest' }); selectSong(el); }
     }
   });
-  
 
+  // ── Song Detail Panel ──
+  // Populates the right panel from the clicked .song-item's data-* attributes.
+  // Priority for playback: Deezer widget (async) > Spotify embed > local audio.
   function selectSong(el) {
+    // Clear active state from the previously selected item
     document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'));
     el.classList.add('active');
-    const title  = el.dataset.title;
-    const artist = el.dataset.artist;
-    const album  = el.dataset.album;
-    const genre  = el.dataset.genre;
-    const date   = el.dataset.date;
-    const audio  = el.dataset.audio;
-    const cover  = el.dataset.cover;
-    const online = JSON.parse(el.dataset.online || '""');
-    const preview = JSON.parse(el.dataset.preview || '""');
 
+    const title   = el.dataset.title;
+    const artist  = el.dataset.artist;
+    const album   = el.dataset.album;
+    const genre   = el.dataset.genre;
+    const date    = el.dataset.date;
+    const audio   = el.dataset.audio;
+    const cover   = el.dataset.cover;
+    const online  = JSON.parse(el.dataset.online || '""');
+    const preview = JSON.parse(el.dataset.preview || '""');
+    const id      = el.dataset.id;
+    const playlists = USER_PLAYLISTS;
+
+    // Build a Spotify embed if the online_source is a Spotify track URL
     let spotifyHtml = '';
     if (online && online.includes("spotify.com/track/")) {
       const trackId = online.split('/track/')[1].split('?')[0];
-
       spotifyHtml = `
         <iframe style="border-radius:12px; margin-top:10px;"
           src="https://open.spotify.com/embed/track/${trackId}"
@@ -200,19 +232,20 @@
       `;
     }
 
-    const id     = el.dataset.id;
-    const playlists = USER_PLAYLISTS;
-
+    // Cover area — shows local/external image; replaced by Deezer widget asynchronously
     const coverHtml = cover
       ? `<div class="cover-area" id="cover-area"><img src="${cover}" alt="Album Cover"></div>`
       : `<div class="cover-area" id="cover-area"><div class="detail-cover-placeholder">🎵</div></div>`;
 
+    // HTML5 audio player — only shown if a local demo file exists
     const audioHtml = audio
       ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
       : '';
 
+    // Placeholder for the Deezer widget injection
     const previewButton = `<div id="preview-container"></div>`;
 
+    // "Add to Playlist" dropdown — submits via a dynamically created form
     const playlistSelectHtml = `
       <div class="detail-row" style="display:flex; align-items:center; gap:8px;">
         <span class="label" style="margin-right:8px;">Add to Playlist</span>
@@ -240,6 +273,8 @@
       ${spotifyHtml || audioHtml}
     `;
 
+    // Async: fetch Deezer track ID and swap the cover area with an embedded widget.
+    // Falls back silently — the static cover remains if Deezer lookup fails.
     (async () => {
       try {
         const res = await fetch(`/user/preview/${id}`);
@@ -247,6 +282,7 @@
         const deezerId = data.deezer_id;
 
         if (deezerId) {
+          // Replace the static cover with the Deezer embedded player
           const coverArea = document.getElementById('cover-area');
           coverArea.innerHTML = `
             <div class="deezer-widget-area">
@@ -267,6 +303,8 @@
       }
     })();
 
+    // "Add to Playlist" button — creates and submits a hidden form with the selected playlist ID.
+    // Using a form POST (not AJAX) so the flash message confirmation works correctly.
     document.getElementById('add-to-playlist').addEventListener('click', () => {
       const select = document.getElementById('playlist-select');
       const playlist_id = select.value;
@@ -276,7 +314,7 @@
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = `/user/add_to_playlist/${id}`;
-  
+
       const input = document.createElement('input');
       input.type = 'hidden';
       input.name = 'playlist_id';

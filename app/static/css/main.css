@@ -1,11 +1,14 @@
+/* ── Global Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── Base Typography & Background ── */
 body {
   background: #0d1117;
   color: #e6edf3;
   font-family: 'Segoe UI', Arial, sans-serif;
 }
 
+/* ── Top Navigation Bar (base.html) ── */
 .base-nav {
   display: flex;
   align-items: center;
@@ -29,6 +32,7 @@ body {
   align-items: center;
 }
 
+/* Ghost-style nav buttons shared by links and the logout form button */
 .base-nav .nav-links a, .base-nav .nav-links button {
   padding: 8px 18px;
   border-radius: 6px;
@@ -46,7 +50,9 @@ body {
 
 main { background: transparent; }
 
-/* ── Nav search bar (dashboard pages) ── */
+/* ── Nav Search Bar (dashboard pages) ──
+   Injected into the navbar center slot via {% block nav_center %}.
+   Used by admin_dashboard.html, user_dashboard.html, and display_playlist.html. */
 .nav-search {
   display: flex;
   align-items: center;
@@ -93,6 +99,7 @@ main { background: transparent; }
 }
 #search-btn:hover { background: #30363d; border-color: #58a6ff; }
 
+/* ── Genre / Sort Filter Selects ── */
 .nav-filter-select {
   background: #0d1117;
   border: 1px solid #30363d;
@@ -107,6 +114,7 @@ main { background: transparent; }
 }
 .nav-filter-select:focus { border-color: #58a6ff; }
 
+/* ── Search Result Count Badge ── */
 .nav-search-count {
   font-size: 0.75rem;
   color: #484f58;

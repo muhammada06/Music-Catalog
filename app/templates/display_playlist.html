@@ -1,4 +1,18 @@
 {% extends "base.html" %}
+<!-- display_playlist.html — the three-column user playlist manager.
+     Left panel  : Playlist list (Recent virtual playlist + user's playlists).
+     Center panel: Song list for the selected playlist (loaded via AJAX or localStorage).
+     Right panel : Song detail view with Deezer widget, Spotify embed,
+                   audio player, Add-to-Playlist, and Favorite button.
+
+     Key behaviors:
+       - "Recent" is a client-side virtual playlist backed by localStorage.
+       - Playlist songs are loaded via GET /user/playlist/<id> JSON API.
+       - Rename is inline (contenteditable-style input); delete shows a confirm dialog.
+       - Privacy toggle fires AJAX to /user/toggle_playlist_privacy/<id>.
+       - Favorite button queries /user/is_favorite/<id> on song selection and
+         toggles via /user/toggle_favorite/<id>.
+       - Deezer preview replaces the cover area asynchronously after selection. -->
 
 {% block title %}User Playlist{% endblock %}
 
@@ -8,48 +22,59 @@
 
 {% block content %}
 <div class="dashboard-wrap">
+  <!-- ── Page Header ── -->
   <div class="dashboard-header">
     <h1>Music Catalog: Playlists</h1>
     <div class="welcome">Hello, {{ current_user.username }}</div>
   </div>
 
+  <!-- ── Three-Column Layout ── -->
   <div class="split">
-    <!-- Left: Playlists -->
+
+    <!-- ── Left Panel: Playlist List ── -->
     <div class="playlist-panel">
-    <div class="playlist-list" id="playlist-list">
+      <div class="playlist-list" id="playlist-list">
+
+        <!-- Virtual "Recent" playlist — songs sourced from localStorage, not the server -->
         <div class="playlist-item" data-id="recent" onclick="selectPlaylist(this)">
           <div class="playlist-item-row">
             <div class="s-title">🕐 Recent</div>
             <span id="recent-count" style="font-size:0.75rem;color:#484f58;"></span>
           </div>
         </div>
+
         {% for playlist in playlists %}
         <div class="playlist-item" onclick="selectPlaylist(this)"
             data-id="{{ playlist.id }}"
             data-title="{{ playlist.name }}">
-            <div class="playlist-item-row">
-              <div class="s-title">{{ playlist.name }}</div>
-              {% if playlist.name != 'Favorites' %}
+          <div class="playlist-item-row">
+            <div class="s-title">{{ playlist.name }}</div>
+            {% if playlist.name != 'Favorites' %}
               {% if playlist.owner %}
+              <!-- Privacy toggle — 🔒 private / 🌍 public; only shown to the owner -->
               <button class="playlist-public-btn" title="is_public" onclick="togglePrivacy(event, this)">🔒</button>
               {% endif %}
+              <!-- Rename and delete buttons — only shown to the playlist owner -->
               <button class="playlist-edit-btn" title="Rename" onclick="startRename(event, this)">🔧</button>
               <button class="playlist-delete-btn" title="Delete" onclick="deletePlaylist(event, this)">🗑️</button>
-              {% endif %}
-            </div>
+            {% endif %}
+          </div>
         </div>
         {% else %}
+        <!-- Shown when the user has no playlists at all -->
         <div style="padding:24px 16px; text-align:center;">
           <p class="empty-msg" style="margin-bottom:16px;">No playlists yet.</p>
           <a href="{{ url_for('user.create_playlist') }}" style="display:inline-block; padding:10px 20px; background:#238636; color:white; border-radius:6px; font-size:0.88rem; font-weight:600; text-decoration:none;">+ Create your first playlist</a>
         </div>
         {% endfor %}
-    </div>
+      </div>
     </div>
 
-    <!-- Center: Songs -->
+    <!-- ── Center Panel: Song List for Selected Playlist ──
+         Populated either from the server (AJAX) or localStorage (Recent). -->
     <div class="song-panel">
-    <div class="song-list" id="song-list">
+      <div class="song-list" id="song-list">
+        <!-- Initial server-rendered songs; replaced on playlist selection -->
         {% for song in songs %}
         <div class="song-item" onclick="selectSong(this)"
             data-id="{{ song.id }}"
@@ -62,34 +87,40 @@
             data-cover="{{ song.album_cover if song.album_cover and song.album_cover.startswith('http') else (url_for('admin.serve_cover', filename=song.album_cover) if song.album_cover else '') }}"
             data-online='{{ (song.online_source or "") | tojson }}'
             data-preview='{{ (song.preview_url or "") | tojson }}'>
-            <div class="s-title">{{ song.title }}</div>
-            <div class="s-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}</div>
+          <div class="s-title">{{ song.title }}</div>
+          <div class="s-meta">{{ song.artist }}{% if song.album %} · {{ song.album }}{% endif %}</div>
         </div>
         {% else %}
         <p class="empty-msg">No songs available yet.</p>
         {% endfor %}
+      </div>
     </div>
-    </div>
-    <!-- Right: detail -->
+
+    <!-- ── Right Panel: Song Detail View (populated by selectSong()) ── -->
     <div class="detail-panel" id="detail-panel">
       <div class="detail-placeholder">
         <div style="font-size:2.5rem; margin-bottom:8px;">🎵</div>
         Select a song to view details
       </div>
     </div>
+
   </div>
 </div>
 
+<!-- Inject server-side data as JS variables for use in the detail panel and recent playlist -->
 <script>
   const USER_PLAYLISTS = JSON.parse('{{ playlists | tojson | safe }}');
-  const ALL_SONGS = {{ songs | tojson | safe }};
+  const ALL_SONGS = {{ songs | tojson | safe }};  // Full song list needed for Recent lookup
 </script>
 
 <script>
+  // ── HTML Attribute Escaping ──
   function escAttr(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
   }
 
+  // ── Online Sources Renderer ──
+  // Renders each comma-separated URL as a favicon icon link.
   function renderSources(online) {
     if (!online) return '';
     const urls = online.split(',').map(u => u.trim()).filter(Boolean);
@@ -107,225 +138,237 @@
     }).join('');
   }
 
-    function buildSongItem(song) {
-        const div = document.createElement("div");
-        div.className = "song-item";
-        div.onclick = () => selectSong(div);
-        div.dataset.id = song.id;
-        div.dataset.title = song.title;
-        div.dataset.artist = song.artist;
-        div.dataset.album = song.album || "";
-        div.dataset.genre = song.genre || "";
-        div.dataset.date = song.release_date || "";
-        div.dataset.audio = song.audio_file || "";
-        div.dataset.cover = song.album_cover
-            ? (song.album_cover.startsWith("http") ? song.album_cover : `/admin/cover/${song.album_cover}`)
-            : "";
-        div.dataset.online = song.online_source || "";
-        div.dataset.preview = song.preview_url || "";
-        div.innerHTML = `<div class="s-title">${song.title}</div>
-            <div class="s-meta">${song.artist}${song.album ? ` · ${song.album}` : ""}</div>`;
-        return div;
+  // ── Song Item DOM Builder ──
+  // Creates a .song-item div from a song object (used when populating the
+  // center panel dynamically, as opposed to the server-rendered initial list).
+  function buildSongItem(song) {
+    const div = document.createElement("div");
+    div.className = "song-item";
+    div.onclick = () => selectSong(div);
+    div.dataset.id = song.id;
+    div.dataset.title = song.title;
+    div.dataset.artist = song.artist;
+    div.dataset.album = song.album || "";
+    div.dataset.genre = song.genre || "";
+    div.dataset.date = song.release_date || "";
+    div.dataset.audio = song.audio_file || "";
+    // Local covers are served via /admin/cover/<filename>
+    div.dataset.cover = song.album_cover
+      ? (song.album_cover.startsWith("http") ? song.album_cover : `/admin/cover/${song.album_cover}`)
+      : "";
+    div.dataset.online = song.online_source || "";
+    div.dataset.preview = song.preview_url || "";
+    div.innerHTML = `<div class="s-title">${song.title}</div>
+      <div class="s-meta">${song.artist}${song.album ? ` · ${song.album}` : ""}</div>`;
+    return div;
+  }
+
+  // ── Playlist Selection ──
+  // Clicking a playlist loads its songs into the center panel.
+  // The "recent" playlist reads from localStorage; others fetch from the server.
+  function selectPlaylist(el) {
+    document.querySelectorAll('.playlist-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+
+    const id = el.dataset.id;
+    const container = document.getElementById('song-list');
+    container.innerHTML = "";
+
+    if (id === 'recent') {
+      // "Recent" playlist: reconstruct from localStorage song IDs using ALL_SONGS as a lookup
+      const recentIds = JSON.parse(localStorage.getItem('musicRecentHistory') || '[]');
+      if (!recentIds.length) {
+        container.innerHTML = '<p class="empty-msg">No songs played yet.</p>';
+        return;
+      }
+      const songMap = {};
+      ALL_SONGS.forEach(s => { songMap[s.id] = s; });
+      recentIds.forEach(sid => {
+        if (songMap[sid]) container.appendChild(buildSongItem(songMap[sid]));
+      });
+      return;
     }
 
-    function selectPlaylist(el) {
-        document.querySelectorAll('.playlist-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-
-        const id = el.dataset.id;
-        const container = document.getElementById('song-list');
-        container.innerHTML = "";
-
-        if (id === 'recent') {
-            const recentIds = JSON.parse(localStorage.getItem('musicRecentHistory') || '[]');
-            if (!recentIds.length) {
-                container.innerHTML = '<p class="empty-msg">No songs played yet.</p>';
-                return;
-            }
-            const songMap = {};
-            ALL_SONGS.forEach(s => { songMap[s.id] = s; });
-            recentIds.forEach(sid => {
-                if (songMap[sid]) container.appendChild(buildSongItem(songMap[sid]));
-            });
-            return;
+    // Regular playlist: load songs via the JSON API
+    fetch(`/user/playlist/${id}`)
+      .then(res => res.json())
+      .then(songs => {
+        if (!songs || songs.length === 0) {
+          container.innerHTML = `<p class="empty-msg">No songs in this playlist.</p>`;
+          return;
         }
+        songs.forEach(song => container.appendChild(buildSongItem(song)));
+      })
+      .catch(err => {
+        console.error("Error loading playlist:", err);
+      });
+  }
 
-        fetch(`/user/playlist/${id}`)
+  // ── Song Detail Panel ──
+  // Builds and injects the right-panel HTML from a .song-item's data-* attributes.
+  // Wires up Add-to-Playlist, Favorite toggle, and async Deezer widget.
+  function selectSong(el) {
+    document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+
+    const title   = el.dataset.title;
+    const artist  = el.dataset.artist;
+    const album   = el.dataset.album;
+    const genre   = el.dataset.genre;
+    const date    = el.dataset.date;
+    const audio   = el.dataset.audio;
+    const cover   = el.dataset.cover;
+    const online  = el.dataset.online || "";
+    const preview = el.dataset.preview || "";
+    const id      = el.dataset.id;
+    const playlists = USER_PLAYLISTS;
+
+    // Build Spotify embed if the online_source is a Spotify track URL
+    let spotifyHtml = '';
+    if (online && online.includes("spotify.com/track/")) {
+      const trackId = online.split('/track/')[1].split('?')[0];
+      spotifyHtml = `
+        <iframe style="border-radius:12px; margin-top:10px;"
+          src="https://open.spotify.com/embed/track/${trackId}"
+          width="100%" height="100"
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+        </iframe>
+      `;
+    }
+
+    // "Add to Playlist" dropdown — only shown when the user has playlists
+    const playlistSelectHtml = playlists && playlists.length ? `
+      <div class="detail-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span class="label" style="margin-right:4px;">Add to Playlist</span>
+        <select id="playlist-select" class="nav-filter-select" style="flex:1;min-width:0;">
+          <option value="">Select Playlist</option>
+          <option value="NEW">+ New Playlist</option>
+          ${playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+        </select>
+        <button id="add-to-playlist-btn" class="btn" style="padding:6px 12px;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">Add</button>
+      </div>` : '';
+
+    // Cover image or placeholder; replaced by Deezer widget asynchronously
+    const coverHtml = cover
+      ? `<div class="cover-area" id="cover-area"><img src="${cover}" alt="Album Cover"></div>`
+      : `<div class="cover-area" id="cover-area"><div class="detail-cover-placeholder">🎵</div></div>`;
+
+    // Local audio player — only rendered if the song has a demo file
+    const audioHtml = audio
+      ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
+      : '';
+
+    const previewButton = `<div id="preview-container"></div>`;
+
+    document.getElementById('detail-panel').innerHTML = `
+      ${coverHtml}
+      <div class="detail-title">${title}</div>
+      <div class="detail-artist">${artist}</div>
+      ${previewButton}
+      <div class="detail-info">
+        ${album ? `<div class="detail-row"><span class="label">Album</span><span class="value">${album}</span></div>` : ''}
+        ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
+        ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
+        ${renderSources(online) ? `<div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${renderSources(online)}</span></div>` : ''}
+        ${playlistSelectHtml}
+        <div style="margin-top:10px;">
+          <!-- Favorite button label is updated by is_favorite check below -->
+          <button id="favorite-btn"
+            style="padding:6px 12px;background:#e5533d;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">
+            Add to Favorites
+          </button>
+        </div>
+      </div>
+      ${spotifyHtml || audioHtml}
+    `;
+
+    // ── Add to Playlist ──
+    // Creates and submits a hidden form POST so flash messages work correctly.
+    const addBtn = document.getElementById('add-to-playlist-btn');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        const select = document.getElementById('playlist-select');
+        const playlist_id = select.value;
+        if (!playlist_id) return alert("Select a playlist!");
+        if (playlist_id === 'NEW') { window.location = '/user/create_playlist'; return; }
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/user/add_to_playlist/${id}`;
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'playlist_id';
+        input.value = playlist_id;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+      });
+    }
+
+    // ── Favorite Button ──
+    const favBtn = document.getElementById('favorite-btn');
+    if (favBtn) {
+      // Check current favorite state and update the button label accordingly
+      fetch(`/user/is_favorite/${id}`)
         .then(res => res.json())
-        .then(songs => {
-            if (!songs || songs.length === 0) {
-                container.innerHTML = `<p class="empty-msg">No songs in this playlist.</p>`;
-                return;
-            }
-            songs.forEach(song => container.appendChild(buildSongItem(song)));
+        .then(data => {
+          favBtn.textContent = data.is_favorite ? "Remove Favorite" : "Add to Favorites";
         })
-        .catch(err => {
-            console.error("Error loading playlist:", err);
-        });
-    }
-    function selectSong(el) {
-        document.querySelectorAll('.song-item').forEach(i => i.classList.remove('active'))
-        el.classList.add('active');
-        const title  = el.dataset.title;
-        const artist = el.dataset.artist;
-        const album  = el.dataset.album;
-        const genre  = el.dataset.genre;
-        const date   = el.dataset.date;
-        const audio  = el.dataset.audio;
-        const cover  = el.dataset.cover;
-        const online = el.dataset.online || "";
-        const preview = el.dataset.preview || "";
+        .catch(err => console.error("Favorite check error:", err));
 
-        let spotifyHtml = '';
-        if (online && online.includes("spotify.com/track/")) {
-            const trackId = online.split('/track/')[1].split('?')[0];
-
-            spotifyHtml = `
-                <iframe style="border-radius:12px; margin-top:10px;"
-                src="https://open.spotify.com/embed/track/${trackId}"
-                width="100%" height="100"
-                frameBorder="0"
-                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
-                </iframe>
-            `;
+      // Toggle favorite on click; update button label based on the new state
+      favBtn.addEventListener('click', async () => {
+        try {
+          const res = await fetch(`/user/toggle_favorite/${id}`, { method: 'POST' });
+          const data = await res.json();
+          favBtn.textContent = data.in_favorites ? "Remove Favorite" : "Add to Favorites";
+        } catch (err) {
+          console.error("Favorite error:", err);
         }
+      });
+    }
 
-        const id       = el.dataset.id;
-        const playlists = USER_PLAYLISTS;
+    // ── Deezer Preview Widget (async) ──
+    // Fetches the Deezer track ID and replaces the cover area with an embedded
+    // player. Falls back silently if the lookup fails or returns no match.
+    (async () => {
+      try {
+        const res = await fetch(`/user/preview/${id}`);
+        const data = await res.json();
+        const deezerId = data.deezer_id;
 
-        const playlistSelectHtml = playlists && playlists.length ? `
-          <div class="detail-row" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span class="label" style="margin-right:4px;">Add to Playlist</span>
-            <select id="playlist-select" class="nav-filter-select" style="flex:1;min-width:0;">
-              <option value="">Select Playlist</option>
-              <option value="NEW">+ New Playlist</option>
-              ${playlists.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
-            </select>
-            <button id="add-to-playlist-btn" class="btn" style="padding:6px 12px;background:#238636;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">Add</button>
-          </div>` : '';
-
-        const coverHtml = cover
-            ? `<div class="cover-area" id="cover-area"><img src="${cover}" alt="Album Cover"></div>`
-            : `<div class="cover-area" id="cover-area"><div class="detail-cover-placeholder">🎵</div></div>`;
-
-        const audioHtml = audio
-            ? `<audio controls style="width:100%; margin-top:8px;"><source src="/user/play/${id}" type="audio/mpeg"></audio>`
-            : '';
-
-        const previewButton = `<div id="preview-container"></div>`;
-
-
-        document.getElementById('detail-panel').innerHTML = `
-            ${coverHtml}
-            <div class="detail-title">${title}</div>
-            <div class="detail-artist">${artist}</div>
-            ${previewButton}
-            <div class="detail-info">
-                ${album ? `<div class="detail-row"><span class="label">Album</span><span class="value">${album}</span></div>` : ''}
-                ${genre ? `<div class="detail-row"><span class="label">Genre</span><span class="value">${genre}</span></div>` : ''}
-                ${date  ? `<div class="detail-row"><span class="label">Released</span><span class="value">${date}</span></div>` : ''}
-                ${renderSources(online) ? `<div class="detail-row"><span class="label">Online Source</span><span class="value" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${renderSources(online)}</span></div>` : ''}
-                ${playlistSelectHtml}
-                <div style="margin-top:10px;">
-                  <button id="favorite-btn"
-                    style="padding:6px 12px;background:#e5533d;color:white;border:none;border-radius:6px;cursor:pointer;font-size:0.82rem;font-weight:600;">
-                    Add to Favorites
-                  </button>
-                </div>
+        if (deezerId) {
+          document.getElementById('cover-area').innerHTML = `
+            <div class="deezer-widget-area">
+              <iframe
+                title="deezer-widget"
+                src="https://widget.deezer.com/widget/dark/track/${deezerId}"
+                width="100%"
+                height="280"
+                frameborder="0"
+                allowtransparency="true"
+                allow="encrypted-media; clipboard-write">
+              </iframe>
             </div>
-            ${spotifyHtml || audioHtml}
-        `;
-
-        // Wire up Add to Playlist button
-        const addBtn = document.getElementById('add-to-playlist-btn');
-        if (addBtn) {
-          addBtn.addEventListener('click', () => {
-            const select = document.getElementById('playlist-select');
-            const playlist_id = select.value;
-            if (!playlist_id) return alert("Select a playlist!");
-            if (playlist_id === 'NEW') { window.location = '/user/create_playlist'; return; }
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/user/add_to_playlist/${id}`;
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'playlist_id';
-            input.value = playlist_id;
-            form.appendChild(input);
-            document.body.appendChild(form);
-            form.submit();
-          });
+          `;
         }
+      } catch (err) {
+        console.error("Preview fetch error:", err);
+      }
+    })();
+  }
 
-        const favBtn = document.getElementById('favorite-btn');
-        if (favBtn) {
-          fetch(`/user/is_favorite/${id}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.is_favorite) {
-                favBtn.textContent = "Remove Favorite";
-              } else {
-                favBtn.textContent = "Add to Favorites";
-              }
-            })
-            .catch(err => console.error("Favorite check error:", err));
-        }
-        if (favBtn) {
-          favBtn.addEventListener('click', async () => {
-            try {
-              const res = await fetch(`/user/toggle_favorite/${id}`, {
-                method: 'POST'
-              });
-
-              const data = await res.json();
-
-              if (data.in_favorites) {
-                favBtn.textContent = "Remove Favorite";
-              } else {
-                favBtn.textContent = "Add to Favorites";
-              }
-
-            } catch (err) {
-              console.error("Favorite error:", err);
-            }
-          });
-        }
-
-        (async () => {
-          try {
-            const res = await fetch(`/user/preview/${id}`);
-            const data = await res.json();
-            const deezerId = data.deezer_id;
-
-            if (deezerId) {
-              document.getElementById('cover-area').innerHTML = `
-                <div class="deezer-widget-area">
-                  <iframe
-                    title="deezer-widget"
-                    src="https://widget.deezer.com/widget/dark/track/${deezerId}"
-                    width="100%"
-                    height="280"
-                    frameborder="0"
-                    allowtransparency="true"
-                    allow="encrypted-media; clipboard-write">
-                  </iframe>
-                </div>
-              `;
-            }
-          } catch (err) {
-            console.error("Preview fetch error:", err);
-          }
-        })();
-
-    }
-
+  // ── Page Init ──
   document.addEventListener('DOMContentLoaded', () => {
+    // Show recent count badge and auto-select the Recent playlist on load
     const recentEl = document.querySelector('.playlist-item[data-id="recent"]');
     const recentIds = JSON.parse(localStorage.getItem('musicRecentHistory') || '[]');
     const countEl = document.getElementById('recent-count');
     if (countEl) countEl.textContent = recentIds.length || '';
     if (recentEl) selectPlaylist(recentEl);
 
+    // Auto-select a specific song if the URL contains ?song=<id>
+    // (small delay so the playlist songs are rendered first)
     const songId = new URLSearchParams(window.location.search).get('song');
     if (songId) {
       setTimeout(() => {
@@ -335,6 +378,8 @@
     }
   });
 
+  // ── Playlist Delete ──
+  // Prompts for confirmation, then calls DELETE API and removes the row from the DOM.
   async function deletePlaylist(e, btn) {
     e.stopPropagation();
     const item = btn.closest('.playlist-item');
@@ -346,11 +391,14 @@
       alert(data.error);
     } else {
       item.remove();
-      // Clear song list if deleted playlist was active
+      // Clear the center panel if the deleted playlist was selected
       document.getElementById('song-list').innerHTML = '<p class="empty-msg">Select a playlist.</p>';
     }
   }
 
+  // ── Playlist Inline Rename ──
+  // Replaces the title element with a text input; saves on blur or Enter,
+  // cancels on Escape. The server enforces uniqueness; errors are alerted.
   function startRename(e, btn) {
     e.stopPropagation();
     const item = btn.closest('.playlist-item');
@@ -361,7 +409,7 @@
     input.type = 'text';
     input.value = currentName;
     input.className = 'playlist-rename-input';
-    input.onclick = e => e.stopPropagation();
+    input.onclick = e => e.stopPropagation(); // Don't trigger selectPlaylist
 
     titleEl.replaceWith(input);
     btn.style.display = 'none';
@@ -370,6 +418,7 @@
 
     async function save() {
       const newName = input.value.trim();
+      // No-op if the name is unchanged or empty
       if (!newName || newName === currentName) {
         input.replaceWith(titleEl);
         btn.style.display = '';
@@ -391,36 +440,31 @@
       }
       btn.style.display = '';
     }
+
     input.addEventListener('blur', save);
     input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-      if (e.key === 'Escape') { input.value = currentName; input.blur(); }
+      if (e.key === 'Enter')  { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { input.value = currentName; input.blur(); } // Cancel
     });
   }
+
+  // ── Privacy Toggle ──
+  // Fires AJAX to flip the playlist's is_public flag;
+  // updates the button icon to reflect the new state (🔒 private / 🌍 public).
   function togglePrivacy(e, btn) {
-      e.stopPropagation();
+    e.stopPropagation();
+    const item = btn.closest('.playlist-item');
+    const playlistId = item.dataset.id;
 
-      const item = btn.closest('.playlist-item');
-      const playlistId = item.dataset.id;
-
-      fetch(`/user/toggle_playlist_privacy/${playlistId}`, {
-        method: 'POST'
-      })
+    fetch(`/user/toggle_playlist_privacy/${playlistId}`, { method: 'POST' })
       .then(res => res.json())
       .then(data => {
-
-        if (data.error) {
-          alert(data.error);
-          return;
-        }
-
+        if (data.error) { alert(data.error); return; }
         btn.textContent = data.is_public ? "🌍" : "🔒";
-
         item.dataset.public = data.is_public;
-
       })
       .catch(err => console.error("Privacy toggle error:", err));
-    }
+  }
 
 </script>
 {% endblock %}

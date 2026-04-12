@@ -1,3 +1,4 @@
+/* ── Global Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { height: 100%; }
@@ -11,15 +12,15 @@ body {
   flex-direction: column;
 }
 
-/* Guest layout locks to viewport — no page scroll */
+/* Guest view locks the viewport so the split layout fills exactly the screen height */
 body.guest { overflow: hidden; }
 
-/* Authenticated layout scrolls normally */
+/* Authenticated view allows normal page scrolling (catalog can be long) */
 body:not(.guest) { overflow-y: auto; }
 
 /* ── Navbar ── */
 nav {
-  flex-shrink: 0;
+  flex-shrink: 0;   /* Never compress — always full height */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -38,6 +39,7 @@ nav {
 
 .nav-links { display: flex; gap: 12px; }
 
+/* ── Navbar Search / Filter Controls ── */
 .nav-search {
   display: flex;
   align-items: center;
@@ -83,6 +85,7 @@ nav {
 }
 #search-btn:hover { background: #30363d; border-color: #58a6ff; }
 
+/* Group-by and sort dropdowns */
 .nav-filter-select {
   background: #0d1117;
   border: 1px solid #30363d;
@@ -98,6 +101,7 @@ nav {
 }
 .nav-filter-select:focus { border-color: #58a6ff; }
 
+/* Visible song count ("42" or "42 / 200" when filtered) */
 .nav-search-count {
   font-size: 0.75rem;
   color: #484f58;
@@ -105,6 +109,7 @@ nav {
   flex-shrink: 0;
 }
 
+/* Ghost-style logout button in the nav */
 .nav-links a {
   padding: 8px 18px;
   border-radius: 6px;
@@ -121,7 +126,8 @@ nav {
 }
 .btn-ghost:hover { background: #21262d; }
 
-/* ── Flash messages ── */
+/* ── Flash Messages ──
+   flex-shrink: 0 keeps them from being compressed if the viewport is short. */
 .flash-messages { flex-shrink: 0; padding: 12px 48px 0; }
 
 .flash-msg {
@@ -134,7 +140,7 @@ nav {
   margin-bottom: 8px;
 }
 
-/* ── Authenticated hero ── */
+/* ── Authenticated Hero Section (used on older pages, kept for compatibility) ── */
 .hero {
   flex: 1;
   display: flex;
@@ -146,6 +152,7 @@ nav {
   gap: 16px;
 }
 
+/* Pill badge above the hero headline */
 .hero-badge {
   display: inline-block;
   font-size: 0.75rem;
@@ -158,6 +165,7 @@ nav {
   border-radius: 20px;
 }
 
+/* clamp() scales the headline fluidly between 2.5rem and 4.5rem */
 .hero h1 {
   font-size: clamp(2.5rem, 6vw, 4.5rem);
   font-weight: 800;
@@ -180,6 +188,7 @@ nav {
 }
 .hero-actions a:hover { transform: translateY(-1px); }
 
+/* ── Footer ── */
 footer {
   text-align: center;
   padding: 20px;
@@ -188,21 +197,25 @@ footer {
   border-top: 1px solid #21262d;
 }
 
-/* ── Guest split layout ── */
+/* ── Main Content Area ──
+   Two layout modes depending on auth state (set via class on <main>). */
+
+/* Guest: side-by-side catalog + auth panel, locked to viewport */
 .home-split {
   flex: 1;
   min-height: 0;
   display: flex;
 }
 
-/* ── Authenticated full-width layout ── */
+/* Authenticated: full-width catalog, normal page scroll */
 .home-full {
   flex: 1;
   display: flex;
   min-height: 0;
 }
 
-/* ── Left: catalog preview ── */
+/* ── Left / Full-Width: Song Catalog Preview Panel ──
+   Background uses radial gradients to add subtle depth without solid colours. */
 .preview-panel {
   flex: 1;
   min-width: 0;
@@ -215,14 +228,16 @@ footer {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  /* Right border separates catalog from the auth panel in guest layout */
   border-right: 1px solid #21262d;
 }
 
-/* Full-width variant for authenticated users */
+/* Authenticated users get the full width — no right border needed */
 .preview-panel--full {
   border-right: none;
 }
 
+/* ── Catalog Hero Header ── */
 .preview-header {
   display: flex;
   flex-direction: column;
@@ -237,6 +252,7 @@ footer {
   gap: 12px;
 }
 
+/* Secondary badge showing the total song count */
 .song-count-badge {
   font-size: 0.75rem;
   font-weight: 600;
@@ -247,6 +263,7 @@ footer {
   border-radius: 20px;
 }
 
+/* Fluid headline that scales between 1.8rem and 2.6rem */
 .preview-header h2 {
   font-size: clamp(1.8rem, 3vw, 2.6rem);
   font-weight: 800;
@@ -262,6 +279,7 @@ footer {
 
 .header-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 
+/* CTA buttons in the hero header */
 .header-btn {
   padding: 9px 22px;
   border-radius: 6px;
@@ -271,16 +289,17 @@ footer {
   transition: background 0.15s, transform 0.1s;
 }
 .header-btn:hover { transform: translateY(-1px); }
-.header-btn-blue  { background: #1f6feb; color: white; }
-.header-btn-blue:hover  { background: #388bfd; }
-.header-btn-green { background: #238636; color: white; }
-.header-btn-green:hover { background: #2ea043; }
+.header-btn-blue   { background: #1f6feb; color: white; }
+.header-btn-blue:hover   { background: #388bfd; }
+.header-btn-green  { background: #238636; color: white; }
+.header-btn-green:hover  { background: #2ea043; }
 .header-btn-purple { background: #6e40c9; color: white; }
 .header-btn-purple:hover { background: #8957e5; }
-.header-btn-red { background: #da3633; color: white; }
-.header-btn-red:hover { background: #f85149; }
+.header-btn-red    { background: #da3633; color: white; }
+.header-btn-red:hover    { background: #f85149; }
 
-/* ── Catalog sections ── */
+/* ── Catalog Sections ──
+   Each section is a labeled horizontal-scroll row of song cards. */
 .catalog-section {
   display: flex;
   flex-direction: column;
@@ -301,6 +320,8 @@ footer {
   letter-spacing: 0.2px;
 }
 
+/* Horizontal scrolling card row.
+   scroll-behavior: smooth ensures JS-driven scrollLeft changes animate. */
 .section-row {
   display: flex;
   gap: 14px;
@@ -308,10 +329,12 @@ footer {
   padding-bottom: 6px;
   scroll-behavior: smooth;
 }
+/* Thin 4px scrollbar for the horizontal row */
 .section-row::-webkit-scrollbar { height: 4px; }
 .section-row::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
 .section-row::-webkit-scrollbar-track { background: transparent; }
 
+/* ── Song Card ── */
 .song-card {
   width: 160px;
   flex-shrink: 0;
@@ -323,18 +346,21 @@ footer {
   transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
+/* Clickable variant shown to authenticated users */
 .song-card--link { cursor: pointer; }
 
+/* Lift + glow on hover */
 .song-card:hover {
   border-color: #388bfd;
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(31,111,235,0.15);
 }
 
+/* ── Song Card Cover Area ── */
 .song-card-cover {
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 1;   /* Perfect square regardless of card width */
   background: #21262d;
   overflow: hidden;
 }
@@ -347,8 +373,10 @@ footer {
   transition: transform 0.3s;
 }
 
+/* Subtle zoom on card hover to add depth */
 .song-card:hover .song-card-cover img { transform: scale(1.04); }
 
+/* Shown when no album cover exists */
 .cover-placeholder {
   width: 100%;
   height: 100%;
@@ -360,6 +388,7 @@ footer {
   background: linear-gradient(135deg, #161b22, #21262d);
 }
 
+/* "🔒 Sign in to play" overlay — only shown to guests on card hover */
 .song-card-overlay {
   position: absolute;
   inset: 0;
@@ -375,9 +404,10 @@ footer {
   opacity: 0;
   transition: opacity 0.2s;
 }
-
 .song-card:hover .song-card-overlay { opacity: 1; }
 
+/* ── Heart / Favorite Button ──
+   Hidden until the card is hovered; always visible when already favorited. */
 .heart-btn {
   position: absolute;
   top: 6px;
@@ -399,9 +429,11 @@ footer {
   line-height: 1;
 }
 .song-card:hover .heart-btn { opacity: 1; }
-.heart-btn.heart-active { opacity: 1; color: #e53935; }
+.heart-btn.heart-active { opacity: 1; color: #e53935; }  /* Red when favorited */
 .heart-btn:hover { transform: scale(1.15); }
 
+/* ── 3-dot "Add to Playlist" Button ──
+   Hidden until card hover; positioned at the bottom-right of the cover. */
 .song-card-menu-btn {
   position: absolute;
   bottom: 6px;
@@ -426,6 +458,8 @@ footer {
 .song-card:hover .song-card-menu-btn { opacity: 1; }
 .song-card-menu-btn:hover { transform: scale(1.12); }
 
+/* ── Playlist Dropdown Menu ──
+   Appears above the 3-dot button; hidden by default, shown with .open class. */
 .song-card-menu {
   position: absolute;
   bottom: 38px;
@@ -451,8 +485,10 @@ footer {
   white-space: nowrap;
 }
 .song-card-menu-item:hover { background: #30363d; }
+/* "Favorites" always appears first and is highlighted in red */
 .song-card-menu-item:first-child { color: #e53935; font-weight: 600; }
 
+/* ── Song Card Info Row ── */
 .song-card-info { padding: 12px 14px; }
 
 .song-card-title {
@@ -473,7 +509,9 @@ footer {
   text-overflow: ellipsis;
 }
 
-
+/* ── Lazy-Load Sentinel ──
+   1×1px invisible element at the end of each row, watched by IntersectionObserver
+   to trigger loading more cards as the user scrolls toward it. */
 .row-sentinel {
   flex-shrink: 0;
   width: 1px;
@@ -481,12 +519,14 @@ footer {
   align-self: stretch;
 }
 
+/* Section song count badge to the right of the section title */
 .section-count {
   font-size: 0.75rem;
   color: #484f58;
   font-weight: 500;
 }
 
+/* Shown when the search query returns zero results */
 .preview-empty {
   flex: 1;
   display: flex;
@@ -498,7 +538,8 @@ footer {
   text-align: center;
 }
 
-/* ── Right: auth panel ── */
+/* ── Right Panel: Guest Auth Side Panel ──
+   Fixed-width column on the right shown only to unauthenticated users. */
 .auth-side {
   width: 400px;
   flex-shrink: 0;
@@ -532,6 +573,8 @@ footer {
   line-height: 1.5;
 }
 
+/* ── Auth Side Form Fields ──
+   Slightly different styling from auth.css for a more compact appearance. */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -559,6 +602,7 @@ footer {
   width: 100%;
 }
 
+/* Focus ring in addition to border colour for accessibility */
 .form-group input:focus {
   border-color: #58a6ff;
   box-shadow: 0 0 0 3px rgba(88,166,255,0.1);
@@ -580,6 +624,7 @@ footer {
 }
 .submit-btn:hover { background: #388bfd; transform: translateY(-1px); }
 
+/* ── Auth Side Navigation Links ── */
 .auth-side-links {
   margin-top: 24px;
   display: flex;
@@ -595,6 +640,7 @@ footer {
 }
 .forgot-link:hover { color: #58a6ff; }
 
+/* "New here?" divider with lines on each side */
 .auth-divider {
   display: flex;
   align-items: center;
@@ -617,6 +663,7 @@ footer {
   letter-spacing: 1px;
 }
 
+/* ── Account Creation Buttons ── */
 .create-btn {
   display: block;
   padding: 11px 16px;

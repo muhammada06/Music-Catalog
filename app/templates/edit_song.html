@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+<!-- edit_song.html — admin form for editing an existing song's metadata and files.
+     Online sources are stored as a comma-separated string; the JS below
+     splits/joins them into individual editable rows dynamically. -->
 
 {% block title %}Edit Song{% endblock %}
 
@@ -11,7 +14,10 @@
   <div class="card">
     <h1>Edit Song</h1>
 
+    <!-- multipart/form-data required for file upload fields -->
     <form method="POST" enctype="multipart/form-data">
+
+      <!-- ── Required Metadata ── -->
       <div class="form-group">
         <label>Title</label>
         <input type="text" name="title" value="{{ song.title }}" required>
@@ -22,6 +28,7 @@
         <input type="text" name="artist" value="{{ song.artist }}" required>
       </div>
 
+      <!-- ── Optional Metadata ── -->
       <div class="form-group">
         <label>Album</label>
         <input type="text" name="album" value="{{ song.album }}">
@@ -37,6 +44,7 @@
         <input type="date" name="release_date" value="{{ song.release_date }}">
       </div>
 
+      <!-- ── File Uploads (leave blank to keep existing file) ── -->
       <div class="form-group">
         <label>Demo Song</label>
         <input type="file" name="audio" value="{{ song.audio_file }}">
@@ -44,12 +52,16 @@
 
       <div class="form-group">
         <label>Album Cover</label>
+        <!-- Show current cover preview if one exists (external URL or local file) -->
         {% if song.album_cover %}
           <img src="{{ song.album_cover if song.album_cover.startswith('http') else url_for('admin.serve_cover', filename=song.album_cover) }}" class="cover-preview">
         {% endif %}
         <input type="file" name="album_cover" accept="image/*">
       </div>
 
+      <!-- ── Online Sources (dynamic rows) ──
+           song.online_source is a comma-separated string; each URL gets its own row.
+           The server re-joins the submitted online_sources fields on save. -->
       <div class="form-group">
         <label>Online Sources</label>
         <div id="sources-container">
@@ -61,6 +73,7 @@
               </div>
             {% endfor %}
           {% else %}
+            <!-- Default empty row when no sources are set -->
             <div class="source-row">
               <input type="text" name="online_sources" class="source-input" placeholder="https://...">
               <button type="button" class="source-remove-btn" onclick="removeSource(this)">✕</button>
@@ -73,6 +86,7 @@
       <button type="submit" class="submit-btn">Save Changes</button>
     </form>
 
+    <!-- Separate form to clear the audio_file field without deleting the file from disk -->
     <form method="POST" action="{{ url_for('admin.removeDemo', song_id=song.id) }}" class="remove-demo-form">
       <button type="submit" class="back-link">Remove the demo song</button>
     </form>
@@ -82,6 +96,9 @@
 </div>
 
 <script>
+  // ── Online Source Row Helpers ──
+
+  // Append a new blank source URL row to the sources container
   function addSource() {
     const row = document.createElement('div');
     row.className = 'source-row';
@@ -90,6 +107,8 @@
     document.getElementById('sources-container').appendChild(row);
   }
 
+  // Remove a source row; if it's the last row, clear its value instead of removing it
+  // so there's always at least one input field visible
   function removeSource(btn) {
     const rows = document.querySelectorAll('.source-row');
     if (rows.length > 1) btn.parentElement.remove();

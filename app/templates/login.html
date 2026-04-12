@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+<!-- login.html — sign-in page for existing users.
+     Handles both regular users (redirected to playlists) and admins (redirected to admin panel). -->
 
 {% block title %}Sign In{% endblock %}
 
@@ -8,11 +10,13 @@
 
 {% block content %}
 
+<!-- ── Centered Auth Card ── -->
 <div class="auth-page">
   <div class="auth-card">
     <h1>Sign In</h1>
     <p class="subtitle">Welcome back. Enter your credentials to continue.</p>
 
+    <!-- Login form — POSTs to auth.login which validates credentials -->
     <form action="{{ url_for('auth.login') }}" method="POST">
       <div class="form-group">
         <label for="username">Username</label>
@@ -27,6 +31,7 @@
       <button type="submit" class="submit-btn submit-btn-blue">Sign In</button>
     </form>
 
+    <!-- ── Navigation Links ── -->
     <div class="auth-links">
       <span>New here? <a href="{{ url_for('user.get') }}">Create a User account</a> or <a href="{{ url_for('admin.get') }}">Admin account</a> or <a href="{{ url_for('auth.getForgot') }}">Forgot Your Password?</a></span>
     </div>
