@@ -23,6 +23,61 @@ def test_same_playlist_name():
     assert p1.name == p2.name
     assert p1.user_id != p2.user_id
 
+#test that users can add songs to playlists
+@pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+def test_add_song_to_playlist():
+    #create test environment
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "SECRET_KEY": "test-secret"
+    })
+
+    with app.app_context():
+        db.create_all()
+        client = app.test_client()
+
+        #create user
+        user = User(username="user", email="user@test.com")
+        user.set_password("password")
+        db.session.add(user)
+
+        #create song
+        song = Song(title="Test Song", artist="Test Artist")
+        db.session.add(song)
+        db.session.commit()
+
+        #create playlist
+        playlist = Playlist(name="My Playlist", user_id=user.id)
+        db.session.add(playlist)
+        db.session.commit()
+
+        with client:
+            #login user
+            client.post('/login', data={
+                "username": "user",
+                "password": "password"
+            }, follow_redirects=True)
+
+            #add song to playlist
+            response = client.post(
+                f'/user/add_to_playlist/{song.id}',
+                data={"playlist_id": playlist.id},
+                follow_redirects=True
+            )
+
+            #check request worked
+            assert response.status_code == 200
+
+            #check database link exists
+            link = linkPlaylistSong.query.filter_by(
+                playlist_id=playlist.id,
+                song_id=song.id
+            ).first()
+
+            assert link is not None
+
+
 #Test if the same song can be added to the playlist twice
 @pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
 def test_add_song_duplicate():
