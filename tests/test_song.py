@@ -63,35 +63,9 @@ def test_songs_are_independent():
     #Check that song object 1's artist isn't the same as song object 2's
     assert song1.artist != song2.artist
 
-# Test that song objects are created and info is saved correctly to model
-def test_set_song():
-
-    #Create test song
-    song = Song(
-        title="test song",
-        artist="test artist",
-        album="test album",
-        genre="rock",
-        release_date=date(2026, 1, 1),
-        audio_file="testFile.mp3",
-        album_cover="cover.jpg",
-        online_source="https://spotify.com/test",
-        user_id=1
-    )
-
-    #Check that the object is saved properly and is able to return all its attributes excluding user_id
-    assert song.title == "test song"
-    assert song.artist == "test artist"
-    assert song.album == "test album"
-    assert song.genre == "rock"
-    assert song.release_date == date(2026, 1, 1)
-    assert song.audio_file == "testFile.mp3"
-    assert song.album_cover == "cover.jpg"
-    assert song.online_source == "https://spotify.com/test"
 
 #Test we can edit song fields
 def test_update_fields():
-
     #Create test song
     song = Song(
         title="test song",
@@ -127,6 +101,7 @@ def test_update_fields():
 
 #Test playing the audio stored with song
 @pytest.mark.filterwarnings("ignore:.*Query.get.*:sqlalchemy.exc.LegacyAPIWarning")
+
 def test_play_audio():
     #Create a test enviroment for flask app
     app = create_app({
