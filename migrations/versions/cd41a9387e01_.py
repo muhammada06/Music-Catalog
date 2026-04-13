@@ -15,10 +15,14 @@ down_revision = 'dbe46c607ad6'
 branch_labels = None
 depends_on = None
 
+#Method to add Deezer track to songs
 def upgrade():
+    # Add new column to store Deezer track ID for songs
     with op.batch_alter_table('song', schema=None) as batch_op:
         batch_op.add_column(sa.Column('deezer_track_id', sa.Integer(), nullable=True))
 
+#Method to remove Deezer track from songs
 def downgrade():
+    # Remove Deezer track ID column from songs table
     with op.batch_alter_table('song', schema=None) as batch_op:
         batch_op.drop_column('deezer_track_id')

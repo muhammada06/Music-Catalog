@@ -17,8 +17,10 @@ depends_on = None
 
 
 def upgrade():
+    # Merge migration: combines multiple revision branches into a single history
     pass
 
 
 def downgrade():
+    # No downgrade logic required for merge migrations
     pass
