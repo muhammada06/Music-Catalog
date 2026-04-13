@@ -21,6 +21,7 @@
     <!-- Optional center slot used by dashboard pages (e.g. search bar) -->
     {% block nav_center %}{% endblock %}
     <div class="nav-links">
+      <a href="{{ url_for('auth.open_pdf') }}" target="_blank" rel="noopener noreferrer" style="margin-left: 20px; color:#4caf50;"> View User Manual</a>
       {% if current_user.is_authenticated %}
         <!-- Hide the "go to dashboard" link when already on a dashboard page -->
         {% if request.endpoint not in ('admin.home', 'admin.dashboard', 'user.browse_playlists') %}

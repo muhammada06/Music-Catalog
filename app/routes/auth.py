@@ -145,3 +145,10 @@ def logout():
     logout_user()
     flash('You have logged out.', 'logout')
     return redirect(url_for('home.home'))
+
+# ── User Manual ────────────────────────────────────────────────────────────────────
+
+@authPage.route("/pdf")
+def open_pdf():
+    """Open user manual"""
+    return redirect(url_for('static', filename='user_manual.pdf'))
