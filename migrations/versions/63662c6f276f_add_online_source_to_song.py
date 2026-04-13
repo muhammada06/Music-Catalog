@@ -17,9 +17,7 @@ branch_labels = None
 depends_on = None
 
 
-def _has_column(table, column):
-    inspector = Inspector.from_engine(op.get_bind())
-    return column in [c['name'] for c in inspector.get_columns(table)]
+
 
 
 def upgrade():
@@ -34,3 +32,11 @@ def downgrade():
         batch_op.drop_column('online_source')
 
     # ### end Alembic commands ###
+
+def _has_column(table, column):
+    bind = op.get_bind()
+    inspector = Inspector.from_engine(bind)
+    tables = inspector.get_table_names()
+    if table not in tables:
+        return False
+    return column in [c['name'] for c in inspector.get_columns(table)]
