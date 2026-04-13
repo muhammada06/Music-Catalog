@@ -1,10 +1,4 @@
-"""Initial migration - create all tables
 
-Revision ID: 63662c6f276f
-Revises: 
-Create Date: 2026-03-22 22:38:40.704565
-
-"""
 from alembic import op
 import sqlalchemy as sa
 

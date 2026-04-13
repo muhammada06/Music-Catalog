@@ -7,10 +7,8 @@ Create Date: 2026-03-28 21:42:04.393169
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy import inspect
 
-
-# revision identifiers, used by Alembic.
 revision = 'dbe46c607ad6'
 down_revision = '63662c6f276f'
 branch_labels = None
@@ -18,14 +16,14 @@ depends_on = None
 
 
 def _has_column(table, column):
-    # Check if a column already exists in the table (prevents duplicate additions)
-    inspector = Inspector.from_engine(op.get_bind())
+    bind = op.get_bind()
+    inspector = inspect(bind)
+    if table not in inspector.get_table_names():
+        return False
     return column in [c['name'] for c in inspector.get_columns(table)]
 
 
 def upgrade():
-    # Add 'email' column to user table if it does not already exist
-    # Also enforce uniqueness to prevent duplicate emails
     if not _has_column('user', 'email'):
         with op.batch_alter_table('user', schema=None) as batch_op:
             batch_op.add_column(sa.Column('email', sa.String(length=255), nullable=True))
@@ -33,9 +31,6 @@ def upgrade():
 
 
 def downgrade():
-    # Remove unique constraint and 'email' column from user table
     with op.batch_alter_table('user', schema=None) as batch_op:
         batch_op.drop_constraint('uq_user_email', type_='unique')
         batch_op.drop_column('email')
-
-    # ### end Alembic commands ###
