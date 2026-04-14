@@ -29,7 +29,7 @@ Music Catalog is a web application that lets you manage and explore your music c
 - Git
 - pip (Python package manager)
  
-### Installation
+### Installation For Developers
  
 **1. Clone the repository**
  
@@ -64,6 +64,10 @@ http://127.0.0.1:8080/
  
  
 ---
+
+### 👥👥👥Installation as a User
+To run our program as a user, simply click [here!!!](https://music-catalog-8fyq.onrender.com/)
+
  
 ## 🔗 Repository
  
