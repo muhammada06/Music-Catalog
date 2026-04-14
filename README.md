@@ -37,22 +37,22 @@ Music Catalog is a web application that lets you manage and explore your music c
 git clone https://github.com/muhammada06/Music-Catalog <folder-name>
 cd <folder-name>
 ```
- 
-**2. Install dependencies**
- 
-```bash
-pip install -r requirements.txt
+ - Python 3.10+
+- Poetry ([installation guide](https://python-poetry.org/docs/#installation))
+
+To check if Poetry is installed:
+```powershell
+poetry --version
+```
+
+2. **Run the setup script by double-clicking the following file in your file explorer**
+```powershell
+   .\setup_and_run.bat
 ```
  
-**3. Run the application**
+
  
-Open `run.py` and press **Run**, or via terminal:
- 
-```bash
-python run.py
-```
- 
-**4. Open in your browser**
+**3. Open in your browser**
  
 ```
 http://127.0.0.1:8080/
@@ -65,7 +65,7 @@ http://127.0.0.1:8080/
  
 ---
 
-### 👥👥👥Installation as a User
+## 👥👥👥Installation as a User
 To run our program as a user, simply click [here!!!](https://music-catalog-8fyq.onrender.com/)
 
  
